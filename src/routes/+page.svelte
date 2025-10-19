@@ -6,6 +6,7 @@
 
 	let currentIndex = 0;
 	$: currentPokemon = data.pokemon[currentIndex];
+	const gridSquares = Array.from({ length: 15 });
 
 	function nextPokemon() {
 		currentIndex = (currentIndex + 1) % data.pokemon.length;
@@ -26,137 +27,133 @@
 	/>
 </svelte:head>
 
-<div class="pokedex-open">
-	<!-- Left Panel -->
-	<div class="left-panel">
-		<!-- Top corner with light -->
-		<div class="corner-light-section">
-			<div class="big-light">
-				<div class="light-shine"></div>
+<div class="pokedex">
+	<section class="panel left-panel">
+		<div class="left-top">
+			<div class="lens">
+				<div class="lens-core">
+					<div class="lens-highlight"></div>
+				</div>
 			</div>
-			<div class="small-lights">
-				<div class="small-light red"></div>
-				<div class="small-light yellow"></div>
-				<div class="small-light green"></div>
+			<div class="indicator-strip">
+				<span class="indicator red"></span>
+				<span class="indicator yellow"></span>
+				<span class="indicator green"></span>
 			</div>
 		</div>
 
-		<!-- Main Screen -->
-		<div class="main-screen-section">
+		<div class="screen-housing">
 			<div class="screen-frame">
-				<div class="screen">
-					<div class="pokemon-display">
+				<div class="screen-bezel">
+					<div class="screen-display">
 						<img
 							src={currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated
 								?.front_default || currentPokemon.sprites.front_default}
 							alt={currentPokemon.name}
-							class="pokemon-sprite"
 						/>
 					</div>
 				</div>
 			</div>
-		</div>
-
-		<!-- Controls under screen -->
-		<div class="left-controls">
-			<div class="control-row">
-				<div class="red-dot"></div>
-				<div class="red-dot"></div>
+			<div class="screen-status">
+				<span class="status-light red"></span>
+				<span class="status-light teal"></span>
+				<span class="status-bar"></span>
 			</div>
-			<div class="green-screen"></div>
 		</div>
-	</div>
 
-	<!-- Center Hinge -->
+		<div class="left-controls">
+			<div class="control-stack">
+				<div class="speaker-slot"></div>
+				<div class="green-pad"></div>
+			</div>
+
+			<div class="dpad" role="group" aria-label="Pokédex navigation">
+				<button
+					class="direction direction-up"
+					aria-label="Previous Pokémon"
+					on:click={previousPokemon}
+				></button>
+				<button
+					class="direction direction-right"
+					aria-label="Next Pokémon"
+					on:click={nextPokemon}
+				></button>
+				<button
+					class="direction direction-down"
+					aria-label="Next Pokémon"
+					on:click={nextPokemon}
+				></button>
+				<button
+					class="direction direction-left"
+					aria-label="Previous Pokémon"
+					on:click={previousPokemon}
+				></button>
+				<div class="direction-center" aria-hidden="true"></div>
+			</div>
+		</div>
+	</section>
+
 	<div class="hinge"></div>
 
-	<!-- Right Panel -->
-	<div class="right-panel">
-		<!-- Info Screen at top -->
-		<div class="info-screen-section">
-			<div class="info-screen">
-				<div class="pokemon-info">
-					<div class="info-line">
-						<span class="label">NO.</span>
-						<span class="value">{currentPokemon.id.toString().padStart(3, '0')}</span>
-					</div>
-					<div class="info-line name-line">
-						<span class="pokemon-name">{formatPokemonName(currentPokemon.name)}</span>
-					</div>
-					<div class="info-line">
-						<span class="label">TYPE</span>
-						<div class="types">
-							{#each currentPokemon.types as typeInfo}
-								<span
-									class="type-badge"
-									style="background-color: {getTypeColor(typeInfo.type.name)}"
-								>
-									{typeInfo.type.name.toUpperCase()}
-								</span>
-							{/each}
+	<section class="panel right-panel">
+		<div class="upper-display">
+			<div class="upper-frame">
+				<div class="upper-screen">
+					<div class="info-stack">
+						<div class="info-row">
+							<span class="info-label">NO.</span>
+							<span class="info-value">{currentPokemon.id.toString().padStart(3, '0')}</span>
+						</div>
+						<div class="info-row name">
+							<span class="pokemon-name">{formatPokemonName(currentPokemon.name)}</span>
+						</div>
+						<div class="info-row">
+							<span class="info-label">TYPE</span>
+							<div class="types">
+								{#each currentPokemon.types as typeInfo}
+									<span
+										class="type-badge"
+										style="background-color: {getTypeColor(typeInfo.type.name)}"
+									>
+										{typeInfo.type.name.toUpperCase()}
+									</span>
+								{/each}
+							</div>
+						</div>
+						<div class="info-row stats">
+							<span class="info-label">HT</span>
+							<span class="info-value">{(currentPokemon.height / 10).toFixed(1)}m</span>
+							<span class="info-label">WT</span>
+							<span class="info-value">{(currentPokemon.weight / 10).toFixed(1)}kg</span>
 						</div>
 					</div>
-					<div class="info-line">
-						<span class="label">HT</span>
-						<span class="value">{(currentPokemon.height / 10).toFixed(1)}m</span>
-					</div>
-					<div class="info-line">
-						<span class="label">WT</span>
-						<span class="value">{(currentPokemon.weight / 10).toFixed(1)}kg</span>
-					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- Blue Button Grid -->
-		<div class="blue-grid-section">
-			<div class="blue-button-grid">
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-				<div class="blue-btn"></div>
-			</div>
+		<div class="keypad" aria-hidden="true">
+			{#each gridSquares as _}
+				<span class="keypad-cell"></span>
+			{/each}
 		</div>
 
-		<!-- Bottom Controls -->
-		<div class="right-controls">
-			<!-- D-Pad and Buttons Row -->
-			<div class="controls-row">
-				<!-- Cross/D-pad -->
-				<div class="cross-section">
-					<div class="cross">
-						<button class="cross-btn cross-up" on:click={previousPokemon}>▲</button>
-						<button class="cross-btn cross-right">▶</button>
-						<button class="cross-btn cross-down" on:click={nextPokemon}>▼</button>
-						<button class="cross-btn cross-left">◀</button>
-						<div class="cross-center"></div>
-					</div>
-				</div>
-
-				<!-- White buttons -->
-				<div class="white-buttons">
-					<div class="white-btn"></div>
-					<div class="white-btn"></div>
-				</div>
+		<div class="right-control-cluster">
+			<div class="white-pills" aria-hidden="true">
+				<span class="white-pill"></span>
+				<span class="white-pill"></span>
 			</div>
-
-			<!-- Yellow Circle -->
-			<div class="yellow-circle-section">
-				<div class="yellow-circle"></div>
+			<div class="lower-controls" aria-hidden="true">
+				<span class="green-bar large"></span>
+				<span class="green-bar small"></span>
+				<span class="red-slot"></span>
 			</div>
 		</div>
-	</div>
+	</section>
 </div>
 
 <style>
 	:global(body) {
-		background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+		background: linear-gradient(135deg, #0e0d17 0%, #1c1b2d 100%);
 		min-height: 100vh;
 		margin: 0;
 		font-family: 'Press Start 2P', cursive;
@@ -164,165 +161,301 @@
 		justify-content: center;
 		align-items: center;
 		padding: 2rem;
+		color: #f5f5f5;
 	}
 
-	.pokedex-open {
+	button {
+		font-family: inherit;
+	}
+
+	.pokedex {
 		display: grid;
-		grid-template-columns: 1fr auto 1fr;
-		max-width: 900px;
+		grid-template-columns: 1.4fr 28px 1fr;
+		align-items: stretch;
+		max-width: 960px;
 		width: 100%;
-		gap: 0;
-		perspective: 1000px;
+		gap: 0.5rem;
+		height: 660px;
 	}
 
-	/* LEFT PANEL */
-	.left-panel {
-		background: linear-gradient(180deg, #dc0a2d 0%, #c40a2a 100%);
-		border: 4px solid #8b0000;
-		border-right: 2px solid #8b0000;
-		border-radius: 20px 0 0 20px;
-		padding: 2rem;
-		box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-		transform: rotateY(-2deg);
-	}
-
-	.corner-light-section {
+	.panel {
+		background: linear-gradient(180deg, #e01025 0%, #bf001b 100%);
+		border: 4px solid #7a0612;
+		box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.15), 0 20px 40px rgba(0, 0, 0, 0.4);
+		padding: 2.5rem 2.25rem;
+		position: relative;
 		display: flex;
-		align-items: center;
-		gap: 1rem;
-		margin-bottom: 2rem;
+		flex-direction: column;
+		height: 100%;
 	}
 
-	.big-light {
+	.left-panel {
+		border-radius: 28px 0 0 28px;
+		padding-top: 3.2rem;
+		gap: 2rem;
+	}
+
+	.left-panel::before {
+		content: '';
+		position: absolute;
+		top: 0.7rem;
+		left: 50%;
+		width: 36%;
+		height: 1.2rem;
+		background: linear-gradient(180deg, #f4283c 0%, #d0162c 100%);
+		border: 4px solid #7a0612;
+		border-left: none;
+		border-radius: 0 18px 18px 0;
+		transform: translateX(-60%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+	}
+
+	.left-top {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		margin-bottom: 2.2rem;
+	}
+
+	.lens {
+		width: 86px;
+		height: 86px;
+		border-radius: 50%;
+		background: linear-gradient(180deg, #ff3c4d 0%, #cc1a2b 100%);
+		border: 5px solid #7a0612;
+		display: grid;
+		place-items: center;
+		position: relative;
+	}
+
+	.lens-core {
 		width: 70px;
 		height: 70px;
 		border-radius: 50%;
-		background: radial-gradient(circle at 30% 30%, #5de8ff, #00bcd4, #0097a7);
-		border: 5px solid white;
+		background: radial-gradient(circle at 30% 30%, #7ceaff, #1a9ed9 55%, #015d8c);
+		border: 6px solid #f1f7ff;
 		position: relative;
-		box-shadow: 0 0 30px rgba(93, 232, 255, 0.8), inset 0 3px 8px rgba(0, 0, 0, 0.3);
-		animation: pulse 2s infinite;
+		box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 28px rgba(124, 234, 255, 0.5);
 	}
 
-	.light-shine {
+	.lens-highlight {
 		position: absolute;
 		top: 12px;
-		left: 12px;
-		width: 25px;
-		height: 25px;
+		left: 14px;
+		width: 22px;
+		height: 22px;
+		background: rgba(255, 255, 255, 0.8);
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.9);
 	}
 
-	@keyframes pulse {
-		0%,
-		100% {
-			box-shadow: 0 0 30px rgba(93, 232, 255, 0.8), inset 0 3px 8px rgba(0, 0, 0, 0.3);
-		}
-		50% {
-			box-shadow: 0 0 50px rgba(93, 232, 255, 1), inset 0 3px 8px rgba(0, 0, 0, 0.3);
-		}
-	}
-
-	.small-lights {
+	.indicator-strip {
 		display: flex;
-		gap: 0.6rem;
+		gap: 0.75rem;
+		padding: 0.35rem 1.1rem;
+		background: linear-gradient(180deg, #f4283c 0%, #d0162c 100%);
+		border: 4px solid #7a0612;
+		border-radius: 999px;
+		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.25);
 	}
 
-	.small-light {
+	.indicator {
 		width: 18px;
 		height: 18px;
 		border-radius: 50%;
-		border: 3px solid white;
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+		border: 3px solid rgba(255, 255, 255, 0.65);
+		box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.45);
 	}
 
-	.small-light.red {
-		background: radial-gradient(circle at 30% 30%, #ff6b6b, #e53935);
+	.indicator.red {
+		background: radial-gradient(circle at 35% 35%, #ff7b7b, #c91822 70%, #63060c);
 	}
 
-	.small-light.yellow {
-		background: radial-gradient(circle at 30% 30%, #ffd54f, #fbc02d);
+	.indicator.yellow {
+		background: radial-gradient(circle at 35% 35%, #ffe27a, #efb214 75%, #7f4e00);
 	}
 
-	.small-light.green {
-		background: radial-gradient(circle at 30% 30%, #66bb6a, #43a047);
+	.indicator.green {
+		background: radial-gradient(circle at 35% 35%, #8cf7a7, #2e983d 70%, #0c4216);
 	}
 
-	.main-screen-section {
-		margin-bottom: 1.5rem;
+	.screen-housing {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		flex: 1;
+		justify-content: space-between;
 	}
 
 	.screen-frame {
-		background: #1a1a1a;
+		background: linear-gradient(180deg, #f03a4d 0%, #be1a2d 100%);
+		border-radius: 18px;
+		padding: 1.4rem;
+		border: 4px solid #65030e;
+		box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.2), inset 0 -3px 6px rgba(0, 0, 0, 0.4);
+		display: flex;
+		flex: 1;
+	}
+
+	.screen-bezel {
+		background: #ffffff;
+		border-radius: 14px;
 		padding: 1.2rem;
-		border-radius: 12px;
-		box-shadow: inset 0 6px 12px rgba(0, 0, 0, 0.7);
+		border: 4px solid #c7c7c7;
+		box-shadow: inset 0 3px 4px rgba(0, 0, 0, 0.25);
+		display: flex;
+		flex: 1;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.screen {
-		background: linear-gradient(180deg, #b8e6d5 0%, #95d5b2 100%);
-		border: 4px solid #0a0a0a;
-		border-radius: 6px;
-		padding: 2rem;
-		min-height: 250px;
+	.screen-display {
+		background: radial-gradient(circle at 50% 45%, #2e2e33 0%, #0b0c0d 70%);
+		border: 5px solid #161616;
+		border-radius: 10px;
+		min-height: 220px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.2);
-	}
-
-	.pokemon-display {
 		width: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
+		max-width: 100%;
 	}
 
-	.pokemon-sprite {
-		width: 160px;
-		height: 160px;
+	.screen-display img {
+		width: 180px;
+		height: 180px;
 		image-rendering: pixelated;
-		filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+		filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));
+	}
+
+	.screen-status {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		padding: 0 0.5rem;
+	}
+
+	.status-light {
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		border: 3px solid #272727;
+		box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.5);
+	}
+
+	.status-light.red {
+		background: radial-gradient(circle at 35% 35%, #ff8585, #c0161c 75%, #520306);
+	}
+
+	.status-light.teal {
+		background: radial-gradient(circle at 35% 35%, #7bf1ff, #1c7997 75%, #052c3c);
+	}
+
+	.status-bar {
+		flex: 1;
+		height: 8px;
+		background: #231116;
+		border-radius: 999px;
+		box-shadow: inset 0 3px 4px rgba(0, 0, 0, 0.6);
 	}
 
 	.left-controls {
 		display: flex;
-		align-items: center;
-		gap: 1rem;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 2.4rem;
+		margin-top: auto;
 	}
 
-	.control-row {
+	.control-stack {
 		display: flex;
-		gap: 0.8rem;
+		flex-direction: column;
+		gap: 1.2rem;
 	}
 
-	.red-dot {
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		background: radial-gradient(circle at 30% 30%, #ff5252, #d32f2f);
-		border: 3px solid #8b0000;
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-	}
-
-	.green-screen {
-		flex: 1;
-		height: 50px;
-		background: #2e7d32;
-		border: 3px solid #1b5e20;
+	.speaker-slot {
+		width: 110px;
+		height: 10px;
+		background: #111;
 		border-radius: 8px;
-		box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.5);
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
 	}
 
-	/* HINGE */
-	.hinge {
-		width: 20px;
-		background: linear-gradient(180deg, #6d1e1e 0%, #4a0f0f 100%);
-		border-top: 4px solid #8b0000;
-		border-bottom: 4px solid #8b0000;
-		box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+	.green-pad {
+		width: 120px;
+		height: 70px;
+		background: linear-gradient(180deg, #89dd4b 0%, #38a21c 90%);
+		border-radius: 12px;
+		border: 4px solid #1f5c16;
+		box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.3), 0 6px 0 #1f4510;
+	}
+
+	.dpad {
 		position: relative;
+		display: grid;
+		grid-template-areas:
+			'. up .'
+			'left center right'
+			'. down .';
+		gap: 3px;
+		width: 126px;
+		height: 126px;
+		padding: 6px;
+		background: linear-gradient(180deg, #1a3824 0%, #0f1f14 100%);
+		border-radius: 16px;
+		border: 4px solid #06110a;
+		box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.6);
+	}
+
+	.direction {
+		background: linear-gradient(180deg, #0f5a3d 0%, #073826 90%);
+		border: 3px solid #031d12;
+		border-radius: 14px;
+		cursor: pointer;
+		box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.1), 0 4px 0 #020f0a;
+		transition: transform 0.08s ease, box-shadow 0.08s ease;
+	}
+
+	.direction:active {
+		transform: translateY(2px);
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+	}
+
+	.direction-up {
+		grid-area: up;
+		border-radius: 12px 12px 4px 4px;
+	}
+
+	.direction-right {
+		grid-area: right;
+		border-radius: 4px 12px 12px 4px;
+	}
+
+	.direction-down {
+		grid-area: down;
+		border-radius: 4px 4px 12px 12px;
+	}
+
+	.direction-left {
+		grid-area: left;
+		border-radius: 12px 4px 4px 12px;
+	}
+
+	.direction-center {
+		grid-area: center;
+		border-radius: 50%;
+		background: radial-gradient(circle at 30% 30%, #5ad4a0, #0f3b2b 70%);
+		border: 4px solid #031d12;
+		box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.6);
+	}
+
+	.hinge {
+		width: 28px;
+		border-radius: 18px;
+		background: linear-gradient(180deg, #7b1a1e 0%, #4d0a0f 100%);
+		border: 4px solid #42050a;
+		box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), inset 0 -3px 6px rgba(0, 0, 0, 0.5);
+		position: relative;
+		height: 100%;
 	}
 
 	.hinge::before,
@@ -331,9 +464,9 @@
 		position: absolute;
 		left: 50%;
 		transform: translateX(-50%);
-		width: 8px;
-		height: 8px;
-		background: #2d2d2d;
+		width: 10px;
+		height: 10px;
+		background: #29252c;
 		border-radius: 50%;
 		box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
 	}
@@ -346,239 +479,282 @@
 		bottom: 20%;
 	}
 
-	/* RIGHT PANEL */
 	.right-panel {
-		background: linear-gradient(180deg, #dc0a2d 0%, #c40a2a 100%);
-		border: 4px solid #8b0000;
-		border-left: 2px solid #8b0000;
-		border-radius: 0 20px 20px 0;
-		padding: 2rem;
-		box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-		transform: rotateY(2deg);
+		border-radius: 0 28px 28px 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2.2rem;
+		padding-top: 3rem;
+		justify-content: space-between;
 	}
 
-	.info-screen-section {
-		margin-bottom: 1.5rem;
+	.upper-display {
+		background: linear-gradient(180deg, #ed2336 0%, #c80f26 100%);
+		border-radius: 20px;
+		border: 4px solid #65030e;
+		box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.25), inset 0 -3px 6px rgba(0, 0, 0, 0.38);
+		padding: 1.4rem;
+		display: flex;
+		flex-direction: column;
+		flex: 1;
 	}
 
-	.info-screen {
-		background: #1a1a1a;
-		padding: 1rem;
-		border-radius: 8px;
-		box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.6);
-	}
-
-	.pokemon-info {
-		background: linear-gradient(180deg, #90caf9 0%, #64b5f6 100%);
-		border: 3px solid #0a0a0a;
-		border-radius: 4px;
+	.upper-frame {
+		background: #201820;
+		border-radius: 16px;
 		padding: 1.2rem;
-		min-height: 150px;
+		border: 4px solid #3b0d14;
+		box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.6);
+		flex: 1;
+		display: flex;
 	}
 
-	.info-line {
+	.upper-screen {
+		background: linear-gradient(180deg, #1a1a1f 0%, #050506 100%);
+		border-radius: 12px;
+		border: 4px solid #030303;
+		min-height: 200px;
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.6rem;
-		font-size: 0.6rem;
-		color: #0a0a0a;
+		justify-content: center;
+		padding: 1.6rem;
+		color: #8ce7ff;
+		text-shadow: 0 0 6px rgba(140, 231, 255, 0.4);
+		flex: 1;
 	}
 
-	.name-line {
-		margin: 0.8rem 0;
+	.info-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		width: 100%;
+	}
+
+	.info-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-size: 0.78rem;
+		letter-spacing: 0.05rem;
+	}
+
+	.info-row.name {
+		justify-content: center;
+	}
+
+	.info-row.stats {
+		gap: 0;
+		flex-wrap: nowrap;
+		justify-content: space-between;
+		width: 260px;
+		margin: 0 auto;
+	}
+
+	.info-row.stats span {
+		white-space: nowrap;
+	}
+
+	.info-row.stats .info-value {
+		display: inline-block;
+		min-width: 7ch;
+		text-align: right;
+	}
+
+	.info-row.stats .info-label {
+		display: inline-block;
+		min-width: 3rem;
 	}
 
 	.pokemon-name {
-		font-size: 1.1rem;
+		font-size: 1.25rem;
 		font-weight: bold;
-		letter-spacing: 0.05rem;
 	}
 
-	.label {
-		font-weight: bold;
-		min-width: 35px;
-	}
-
-	.value {
-		letter-spacing: 0.05rem;
+	.info-label {
+		text-transform: uppercase;
+		min-width: 3.5rem;
 	}
 
 	.types {
 		display: flex;
-		gap: 0.4rem;
+		gap: 0.5rem;
 		flex-wrap: wrap;
 	}
 
 	.type-badge {
-		padding: 0.3rem 0.7rem;
-		border-radius: 4px;
-		font-size: 0.5rem;
-		color: white;
-		border: 2px solid rgba(0, 0, 0, 0.3);
+		padding: 0.25rem 0.7rem;
+		border-radius: 999px;
+		font-size: 0.6rem;
+		color: #fff;
+		border: 2px solid rgba(0, 0, 0, 0.35);
+		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.25);
 	}
 
-	.blue-grid-section {
-		margin-bottom: 1.5rem;
-	}
-
-	.blue-button-grid {
+	.keypad {
 		display: grid;
 		grid-template-columns: repeat(5, 1fr);
-		gap: 0.6rem;
+		gap: 0.55rem;
+		align-self: center;
+		width: 100%;
+		max-width: 360px;
+		margin-top: auto;
 	}
 
-	.blue-btn {
+	.keypad-cell {
 		aspect-ratio: 1;
-		background: linear-gradient(145deg, #42a5f5, #1e88e5);
-		border: 3px solid #0d47a1;
-		border-radius: 6px;
-		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3), 0 3px 0 #0d47a1;
+		background: linear-gradient(180deg, #63bfff 0%, #1c5fbf 95%);
+		border: 3px solid #0f2c6d;
+		border-radius: 8px;
+		box-shadow: inset 0 3px 5px rgba(255, 255, 255, 0.25), 0 4px 0 #0c2050;
 	}
 
-	.right-controls {
+	.right-control-cluster {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 1.6rem;
+		align-items: center;
+		margin-top: auto;
 	}
 
-	.controls-row {
+	.white-pills {
 		display: flex;
-		justify-content: space-between;
+		gap: 1.4rem;
+	}
+
+	.white-pill {
+		width: 90px;
+		height: 28px;
+		background: linear-gradient(180deg, #f7f7f7 0%, #d9d9d9 95%);
+		border-radius: 20px;
+		border: 3px solid #9f9f9f;
+		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5), 0 4px 0 #6f6f6f;
+	}
+
+	.lower-controls {
+		display: flex;
+		gap: 1.8rem;
 		align-items: center;
 	}
 
-	.cross-section {
-		flex: 0 0 auto;
+	.green-bar {
+		display: block;
+		background: linear-gradient(180deg, #2e8b57 0%, #0d4a2f 95%);
+		border: 3px solid #042517;
+		border-radius: 12px;
+		box-shadow: inset 0 3px 4px rgba(255, 255, 255, 0.25), 0 4px 0 #02160e;
 	}
 
-	.cross {
-		width: 100px;
-		height: 100px;
-		display: grid;
-		grid-template-areas:
-			'. up .'
-			'left center right'
-			'. down .';
-		gap: 1px;
+	.green-bar.large {
+		width: 150px;
+		height: 36px;
 	}
 
-	.cross-btn {
-		background: linear-gradient(145deg, #2d2d2d, #1a1a1a);
-		border: 2px solid #0a0a0a;
-		width: 32px;
-		height: 32px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #666;
-		font-size: 0.9rem;
-		cursor: pointer;
-		box-shadow: 0 2px 0 #000, inset 0 1px 2px rgba(255, 255, 255, 0.1);
-		transition: all 0.1s;
+	.green-bar.small {
+		width: 96px;
+		height: 26px;
 	}
 
-	.cross-btn:active {
-		transform: translateY(1px);
-		box-shadow: 0 1px 0 #000, inset 0 1px 2px rgba(255, 255, 255, 0.1);
-	}
-
-	.cross-up {
-		grid-area: up;
-		border-radius: 6px 6px 0 0;
-	}
-
-	.cross-right {
-		grid-area: right;
-		border-radius: 0 6px 6px 0;
-	}
-
-	.cross-down {
-		grid-area: down;
-		border-radius: 0 0 6px 6px;
-	}
-
-	.cross-left {
-		grid-area: left;
-		border-radius: 6px 0 0 6px;
-	}
-
-	.cross-center {
-		grid-area: center;
-		background: #0a0a0a;
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
-	}
-
-	.white-buttons {
-		display: flex;
-		flex-direction: column;
-		gap: 0.8rem;
-	}
-
-	.white-btn {
-		width: 50px;
-		height: 20px;
-		background: linear-gradient(145deg, #f5f5f5, #e0e0e0);
-		border: 3px solid #9e9e9e;
-		border-radius: 15px;
-		box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), 0 2px 0 #757575;
-	}
-
-	.yellow-circle-section {
-		display: flex;
-		justify-content: center;
-	}
-
-	.yellow-circle {
-		width: 60px;
-		height: 60px;
-		border-radius: 50%;
-		background: radial-gradient(circle at 35% 35%, #fff59d, #fdd835);
-		border: 4px solid #f57f17;
-		box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.2), 0 4px 0 #f57f17;
-		position: relative;
-	}
-
-	.yellow-circle::after {
-		content: '';
-		position: absolute;
-		top: 10px;
-		left: 10px;
-		width: 18px;
+	.red-slot {
+		display: block;
+		width: 170px;
 		height: 18px;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.7);
+		background: linear-gradient(180deg, #7f0a10 0%, #3d0406 100%);
+		border-radius: 12px;
+		border: 3px solid #300003;
+		box-shadow: inset 0 3px 4px rgba(0, 0, 0, 0.6);
 	}
 
-	@media (max-width: 900px) {
-		.pokedex-open {
+	@media (max-width: 1024px) {
+		.pokedex {
+			max-width: 880px;
+			gap: 0.25rem;
+			grid-template-columns: 1.3fr 28px 1fr;
+		}
+
+		.panel {
+			padding: 2.2rem 2rem;
+		}
+
+		.left-controls {
+			gap: 1.6rem;
+		}
+
+		.keypad {
+			max-width: 320px;
+		}
+	}
+
+	@media (max-width: 860px) {
+		.pokedex {
 			grid-template-columns: 1fr;
-			max-width: 500px;
+			max-width: 540px;
+			height: auto;
+		}
+
+		.panel {
+			height: auto;
 		}
 
 		.left-panel {
-			border-radius: 20px 20px 0 0;
-			border-right: 4px solid #8b0000;
-			transform: none;
+			border-radius: 28px 28px 0 0;
+		}
+
+		.right-panel {
+			border-radius: 0 0 28px 28px;
 		}
 
 		.hinge {
 			display: none;
 		}
 
-		.right-panel {
-			border-radius: 0 0 20px 20px;
-			border-left: 4px solid #8b0000;
-			border-top: 2px solid #8b0000;
-			transform: none;
+		.panel {
+			padding: 2.4rem 2.1rem;
 		}
 
-		.pokemon-sprite {
-			width: 120px;
-			height: 120px;
+		.info-row {
+			justify-content: center;
+		}
+	}
+
+	@media (max-width: 560px) {
+		:global(body) {
+			padding: 1.2rem;
+		}
+
+		.panel {
+			padding: 2rem 1.6rem;
+		}
+
+		.left-controls {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.control-stack {
+			align-items: center;
+		}
+
+		.info-row.stats {
+			flex-wrap: wrap;
+			gap: 1rem;
+			width: 100%;
+		}
+
+		.info-row.stats span {
+			white-space: normal;
+		}
+
+		.info-row.stats .info-value {
+			min-width: 0;
+			text-align: center;
+		}
+
+		.upper-screen {
+			padding: 1.2rem;
+		}
+
+		.keypad {
+			grid-template-columns: repeat(4, 1fr);
 		}
 	}
 </style>

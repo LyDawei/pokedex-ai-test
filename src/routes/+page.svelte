@@ -6,7 +6,7 @@
 
 	let currentIndex = 0;
 	$: currentPokemon = data.pokemon[currentIndex];
-	const gridSquares = Array.from({ length: 15 });
+	const gridSquares = Array.from({ length: 10 });
 
 	function nextPokemon() {
 		currentIndex = (currentIndex + 1) % data.pokemon.length;
@@ -143,8 +143,7 @@
 				<span class="white-pill"></span>
 			</div>
 			<div class="lower-controls" aria-hidden="true">
-				<span class="green-bar large"></span>
-				<span class="green-bar small"></span>
+				<span class="red-slot"></span>
 				<span class="red-slot"></span>
 			</div>
 		</div>
@@ -170,7 +169,7 @@
 
 	.pokedex {
 		display: grid;
-		grid-template-columns: 1.4fr 28px 1fr;
+		grid-template-columns: 450px 28px 450px;
 		align-items: stretch;
 		max-width: 960px;
 		width: 100%;
@@ -187,6 +186,9 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+		width: 450px;
+		min-width: 450px;
+		max-width: 450px;
 	}
 
 	.left-panel {
@@ -517,7 +519,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 1.6rem;
+		padding: 1.2rem;
 		color: #8ce7ff;
 		text-shadow: 0 0 6px rgba(140, 231, 255, 0.4);
 		flex: 1;
@@ -533,8 +535,8 @@
 	.info-row {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		font-size: 0.78rem;
+		gap: 0.5rem;
+		font-size: 0.7rem;
 		letter-spacing: 0.05rem;
 	}
 
@@ -543,11 +545,11 @@
 	}
 
 	.info-row.stats {
-		gap: 0;
+		gap: 0.5rem;
 		flex-wrap: nowrap;
 		justify-content: space-between;
-		width: 260px;
-		margin: 0 auto;
+		width: 100%;
+		margin: 0;
 	}
 
 	.info-row.stats span {
@@ -556,23 +558,20 @@
 
 	.info-row.stats .info-value {
 		display: inline-block;
-		min-width: 7ch;
-		text-align: right;
+		text-align: left;
 	}
 
 	.info-row.stats .info-label {
 		display: inline-block;
-		min-width: 3rem;
 	}
 
 	.pokemon-name {
-		font-size: 1.25rem;
+		font-size: 1.1rem;
 		font-weight: bold;
 	}
 
 	.info-label {
 		text-transform: uppercase;
-		min-width: 3.5rem;
 	}
 
 	.types {
@@ -593,10 +592,10 @@
 	.keypad {
 		display: grid;
 		grid-template-columns: repeat(5, 1fr);
-		gap: 0.55rem;
+		gap: 0;
 		align-self: center;
 		width: 100%;
-		max-width: 360px;
+		max-width: 100%;
 		margin-top: auto;
 	}
 
@@ -604,7 +603,7 @@
 		aspect-ratio: 1;
 		background: linear-gradient(180deg, #63bfff 0%, #1c5fbf 95%);
 		border: 3px solid #0f2c6d;
-		border-radius: 8px;
+		border-radius: 0;
 		box-shadow: inset 0 3px 5px rgba(255, 255, 255, 0.25), 0 4px 0 #0c2050;
 	}
 
@@ -618,22 +617,24 @@
 
 	.white-pills {
 		display: flex;
-		gap: 1.4rem;
+		gap: 0;
+		align-self: flex-start;
 	}
 
 	.white-pill {
-		width: 90px;
-		height: 28px;
+		width: 70px;
+		height: 32px;
 		background: linear-gradient(180deg, #f7f7f7 0%, #d9d9d9 95%);
-		border-radius: 20px;
+		border-radius: 0;
 		border: 3px solid #9f9f9f;
 		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5), 0 4px 0 #6f6f6f;
 	}
 
 	.lower-controls {
 		display: flex;
-		gap: 1.8rem;
+		justify-content: space-between;
 		align-items: center;
+		width: 100%;
 	}
 
 	.green-bar {
@@ -645,19 +646,19 @@
 	}
 
 	.green-bar.large {
-		width: 150px;
-		height: 36px;
+		width: 110px;
+		height: 32px;
 	}
 
 	.green-bar.small {
-		width: 96px;
-		height: 26px;
+		width: 70px;
+		height: 22px;
 	}
 
 	.red-slot {
 		display: block;
-		width: 170px;
-		height: 18px;
+		width: 160px;
+		height: 32px;
 		background: linear-gradient(180deg, #7f0a10 0%, #3d0406 100%);
 		border-radius: 12px;
 		border: 3px solid #300003;
@@ -668,11 +669,14 @@
 		.pokedex {
 			max-width: 880px;
 			gap: 0.25rem;
-			grid-template-columns: 1.3fr 28px 1fr;
+			grid-template-columns: 400px 28px 400px;
 		}
 
 		.panel {
 			padding: 2.2rem 2rem;
+			width: 400px;
+			min-width: 400px;
+			max-width: 400px;
 		}
 
 		.left-controls {

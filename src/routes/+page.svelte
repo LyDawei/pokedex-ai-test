@@ -1,19 +1,104 @@
 <script lang="ts">
-	import { formatPokemonName, getTypeColor } from '$lib/api/pokeapi';
+	import { formatPokemonName, getTypeColor, fetchPokemonSpecies } from '$lib/api/pokeapi';
+	import { speakPokedexEntry } from '$lib/tts/elevenlabs';
 	import type { PageData } from './$types';
+	import type { PokemonSpecies } from '$lib/api/pokeapi';
 
 	export let data: PageData;
 
 	let currentIndex = 0;
+	let isPlaying = false;
+	let showEntry = false;
+	let showShiny = false;
+	let speciesCache: Map<number, PokemonSpecies> = new Map();
+	let currentSpecies: PokemonSpecies | null = null;
+
 	$: currentPokemon = data.pokemon[currentIndex];
 	const gridSquares = Array.from({ length: 10 });
 
+	// Play Pokemon cry sound (browser only)
+	function playCry(cryUrl: string) {
+		if (typeof Audio !== 'undefined') {
+			const audio = new Audio(cryUrl);
+			audio.volume = 0.5;
+			audio.play().catch(err => console.error('Error playing cry:', err));
+		}
+	}
+
+	// Watch for Pokemon changes and play cry + preload species data
+	$: if (currentPokemon && typeof window !== 'undefined') {
+		playCry(currentPokemon.cries.legacy); // Using legacy for classic 90s sound
+		loadSpeciesData(); // Preload species data in background
+	}
+
 	function nextPokemon() {
 		currentIndex = (currentIndex + 1) % data.pokemon.length;
+		showEntry = false; // Reset to sprite view when navigating
+		showShiny = false; // Reset to normal sprite
 	}
 
 	function previousPokemon() {
 		currentIndex = (currentIndex - 1 + data.pokemon.length) % data.pokemon.length;
+		showEntry = false; // Reset to sprite view when navigating
+		showShiny = false; // Reset to normal sprite
+	}
+
+	function toggleShiny() {
+		if (!showEntry) {
+			showShiny = !showShiny;
+		}
+	}
+
+	// Fetch species data when needed
+	async function loadSpeciesData() {
+		if (!speciesCache.has(currentPokemon.id)) {
+			try {
+				const species = await fetchPokemonSpecies(currentPokemon.id);
+				speciesCache.set(currentPokemon.id, species);
+				speciesCache = speciesCache; // Trigger reactivity
+			} catch (error) {
+				console.error('Error fetching species data:', error);
+			}
+		}
+		currentSpecies = speciesCache.get(currentPokemon.id) || null;
+	}
+
+	async function toggleEntryView() {
+		showEntry = !showEntry;
+
+		// Autoplay when entering entry view
+		if (showEntry && !isPlaying) {
+			await loadSpeciesData();
+			if (currentSpecies) {
+				isPlaying = true;
+				try {
+					const entry = getPokedexEntry();
+					await speakPokedexEntry(entry);
+				} catch (error) {
+					console.error('Error playing audio:', error);
+				} finally {
+					isPlaying = false;
+				}
+			}
+		}
+	}
+
+	// Get the first English Pokedex entry (preferably from Red/Blue for 90s nostalgia)
+	function getPokedexEntry(): string {
+		if (!currentSpecies) return 'Loading...';
+
+		const englishEntries = currentSpecies.flavor_text_entries.filter(
+			(entry) => entry.language.name === 'en'
+		);
+
+		// Prefer entries from original games (red, blue, yellow)
+		const classicEntry = englishEntries.find((entry) =>
+			['red', 'blue', 'yellow'].includes(entry.version.name)
+		);
+
+		const entry = classicEntry || englishEntries[0];
+		// Clean up the text (remove form feeds and extra whitespace)
+		return entry?.flavor_text.replace(/\f/g, ' ').replace(/\n/g, ' ') || 'No entry available.';
 	}
 </script>
 
@@ -46,11 +131,18 @@
 			<div class="screen-frame">
 				<div class="screen-bezel">
 					<div class="screen-display">
-						<img
-							src={currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated
-								?.front_default || currentPokemon.sprites.front_default}
-							alt={currentPokemon.name}
-						/>
+						{#if showEntry}
+							<div class="entry-view">
+								<div class="entry-view-text">{getPokedexEntry()}</div>
+							</div>
+						{:else}
+							<img
+								src={showShiny
+									? (currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_shiny || currentPokemon.sprites.front_shiny)
+									: (currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_default || currentPokemon.sprites.front_default)}
+								alt={currentPokemon.name}
+							/>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -70,8 +162,8 @@
 			<div class="dpad" role="group" aria-label="Pokédex navigation">
 				<button
 					class="direction direction-up"
-					aria-label="Previous Pokémon"
-					on:click={previousPokemon}
+					aria-label="Toggle shiny"
+					on:click={toggleShiny}
 				></button>
 				<button
 					class="direction direction-right"
@@ -80,15 +172,15 @@
 				></button>
 				<button
 					class="direction direction-down"
-					aria-label="Next Pokémon"
-					on:click={nextPokemon}
+					aria-label="Toggle shiny"
+					on:click={toggleShiny}
 				></button>
 				<button
 					class="direction direction-left"
 					aria-label="Previous Pokémon"
 					on:click={previousPokemon}
 				></button>
-				<div class="direction-center" aria-hidden="true"></div>
+				<button class="direction-center" aria-label="Toggle entry" on:click={toggleEntryView}></button>
 			</div>
 		</div>
 	</section>
@@ -448,6 +540,31 @@
 		background: radial-gradient(circle at 30% 30%, #5ad4a0, #0f3b2b 70%);
 		border: 4px solid #031d12;
 		box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.6);
+		cursor: pointer;
+		transition: transform 0.08s ease, box-shadow 0.08s ease;
+	}
+
+	.direction-center:active {
+		transform: scale(0.95);
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+	}
+
+	.entry-view {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1.5rem;
+	}
+
+	.entry-view-text {
+		color: #00ff00;
+		font-size: 0.6rem;
+		line-height: 1.8;
+		letter-spacing: 0.05rem;
+		text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+		text-align: center;
 	}
 
 	.hinge {

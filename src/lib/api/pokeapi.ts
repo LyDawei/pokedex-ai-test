@@ -30,6 +30,11 @@ export interface PokemonType {
 	};
 }
 
+export interface PokemonCries {
+	latest: string;
+	legacy: string;
+}
+
 export interface Pokemon {
 	id: number;
 	name: string;
@@ -38,6 +43,7 @@ export interface Pokemon {
 	types: PokemonType[];
 	height: number;
 	weight: number;
+	cries: PokemonCries;
 }
 
 export interface LocationArea {
@@ -45,6 +51,22 @@ export interface LocationArea {
 		name: string;
 		url: string;
 	};
+}
+
+export interface FlavorTextEntry {
+	flavor_text: string;
+	language: {
+		name: string;
+	};
+	version: {
+		name: string;
+	};
+}
+
+export interface PokemonSpecies {
+	id: number;
+	name: string;
+	flavor_text_entries: FlavorTextEntry[];
 }
 
 /**
@@ -62,7 +84,11 @@ export async function fetchPokemonList(limit = 151, offset = 0): Promise<Pokemon
  */
 export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> {
 	const response = await fetch(`${BASE_URL}/pokemon/${nameOrId}`);
-	if (!response.ok) throw new Error(`Failed to fetch Pokemon: ${nameOrId}`);
+	if (!response.ok) {
+		const error = `Failed to fetch Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`;
+		console.error(error);
+		throw new Error(error);
+	}
 	return response.json();
 }
 
@@ -71,7 +97,24 @@ export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> 
  */
 export async function fetchPokemonLocations(nameOrId: string | number): Promise<LocationArea[]> {
 	const response = await fetch(`${BASE_URL}/pokemon/${nameOrId}/encounters`);
-	if (!response.ok) throw new Error(`Failed to fetch locations for Pokemon: ${nameOrId}`);
+	if (!response.ok) {
+		const error = `Failed to fetch locations for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`;
+		console.error(error);
+		throw new Error(error);
+	}
+	return response.json();
+}
+
+/**
+ * Fetch Pokemon species data including Pokedex entries
+ */
+export async function fetchPokemonSpecies(nameOrId: string | number): Promise<PokemonSpecies> {
+	const response = await fetch(`${BASE_URL}/pokemon-species/${nameOrId}`);
+	if (!response.ok) {
+		const error = `Failed to fetch species for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`;
+		console.error(error);
+		throw new Error(error);
+	}
 	return response.json();
 }
 

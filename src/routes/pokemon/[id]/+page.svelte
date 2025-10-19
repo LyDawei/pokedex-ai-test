@@ -1,15 +1,49 @@
 <script lang="ts">
 	import { formatPokemonName, getTypeColor } from '$lib/api/pokeapi';
+	import { speakPokedexEntry } from '$lib/tts/elevenlabs';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
-	const { pokemon, locations } = data;
+	const { pokemon, locations, species } = data;
+
+	let isPlaying = false;
 
 	function formatLocationName(name: string): string {
 		return name
 			.split('-')
 			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 			.join(' ');
+	}
+
+	// Get the first English Pokedex entry (preferably from Red/Blue for 90s nostalgia)
+	function getPokedexEntry(): string {
+		const englishEntries = species.flavor_text_entries.filter(
+			(entry) => entry.language.name === 'en'
+		);
+
+		// Prefer entries from original games (red, blue, yellow)
+		const classicEntry = englishEntries.find((entry) =>
+			['red', 'blue', 'yellow'].includes(entry.version.name)
+		);
+
+		const entry = classicEntry || englishEntries[0];
+		// Clean up the text (remove form feeds and extra whitespace)
+		return entry?.flavor_text.replace(/\f/g, ' ').replace(/\n/g, ' ') || 'No entry available.';
+	}
+
+	async function handlePlayEntry() {
+		if (isPlaying) return;
+
+		isPlaying = true;
+		try {
+			const entry = getPokedexEntry();
+			await speakPokedexEntry(entry);
+		} catch (error) {
+			console.error('Error playing audio:', error);
+			alert('Failed to play audio. Please check your API key.');
+		} finally {
+			isPlaying = false;
+		}
 	}
 </script>
 
@@ -44,6 +78,13 @@
 					<div class="entry-header">
 						<div class="entry-number">NO. {pokemon.id.toString().padStart(3, '0')}</div>
 						<h1 class="entry-title">{formatPokemonName(pokemon.name).toUpperCase()}</h1>
+					</div>
+
+					<div class="pokedex-entry">
+						<div class="entry-text">{getPokedexEntry()}</div>
+						<button class="voice-button" on:click={handlePlayEntry} disabled={isPlaying}>
+							{isPlaying ? '🔊 PLAYING...' : '🔊 HEAR ENTRY'}
+						</button>
 					</div>
 
 					<div class="main-display">
@@ -282,6 +323,51 @@
 		margin: 0;
 		text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.3);
 		letter-spacing: 0.1rem;
+	}
+
+	.pokedex-entry {
+		background: rgba(0, 0, 0, 0.15);
+		border: 3px solid rgba(0, 0, 0, 0.3);
+		border-radius: 8px;
+		padding: 1.5rem;
+		margin-bottom: 2rem;
+	}
+
+	.entry-text {
+		font-size: 0.55rem;
+		color: #1a1a1a;
+		line-height: 1.8;
+		margin-bottom: 1rem;
+		letter-spacing: 0.05rem;
+	}
+
+	.voice-button {
+		width: 100%;
+		background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+		color: #9fdfcd;
+		border: 3px solid rgba(0, 0, 0, 0.5);
+		border-radius: 8px;
+		padding: 1rem;
+		font-family: 'Press Start 2P', cursive;
+		font-size: 0.6rem;
+		cursor: pointer;
+		letter-spacing: 0.1rem;
+		transition: all 0.2s;
+	}
+
+	.voice-button:hover:not(:disabled) {
+		background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+	}
+
+	.voice-button:active:not(:disabled) {
+		transform: translateY(0);
+	}
+
+	.voice-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
 	}
 
 	.main-display {

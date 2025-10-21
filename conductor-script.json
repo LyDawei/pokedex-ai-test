@@ -1,0 +1,8 @@
+{
+  "steps": [
+    {
+      "command": "cp ~/repos/pokedex-ai-test/.env .env",
+      "description": "Copy .env file from source repository"
+    }
+  ]
+}

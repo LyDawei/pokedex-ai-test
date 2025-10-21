@@ -1,6 +1,7 @@
 // ElevenLabs Text-to-Speech integration
+import { env } from '$env/dynamic/private';
 
-const API_KEY = 'sk_55e2d4085be9b28a492fb4c500429556bfe7380323606c2d';
+const API_KEY = env.ELEVENLABS_API_KEY;
 const API_URL = 'https://api.elevenlabs.io/v1';
 
 // Voice ID for a nerdy/scientific voice (similar to Dexter)

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { formatPokemonName, getTypeColor } from '$lib/api/pokeapi';
 	import { speakPokedexEntry } from '$lib/tts/elevenlabs';
 	import type { PageData } from './$types';
@@ -73,7 +74,7 @@
 		<div class="screen-container">
 			<div class="screen-bezel">
 				<div class="screen">
-					<a href="/" class="back-link">◄ BACK</a>
+					<a href="{base || '/'}" class="back-link">◄ BACK</a>
 
 					<div class="entry-header">
 						<div class="entry-number">NO. {pokemon.id.toString().padStart(3, '0')}</div>

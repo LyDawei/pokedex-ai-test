@@ -85,9 +85,11 @@ export async function fetchPokemonList(limit = 151, offset = 0): Promise<Pokemon
 export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> {
 	const response = await fetch(`${BASE_URL}/pokemon/${nameOrId}`);
 	if (!response.ok) {
-		const error = `Failed to fetch Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`;
-		console.error(error);
-		throw new Error(error);
+		// Log detailed error server-side only
+		if (import.meta.env.DEV) {
+			console.error(`Failed to fetch Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+		}
+		throw new Error('Failed to fetch Pokemon data');
 	}
 	return response.json();
 }
@@ -98,9 +100,11 @@ export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> 
 export async function fetchPokemonLocations(nameOrId: string | number): Promise<LocationArea[]> {
 	const response = await fetch(`${BASE_URL}/pokemon/${nameOrId}/encounters`);
 	if (!response.ok) {
-		const error = `Failed to fetch locations for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`;
-		console.error(error);
-		throw new Error(error);
+		// Log detailed error server-side only
+		if (import.meta.env.DEV) {
+			console.error(`Failed to fetch locations for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+		}
+		throw new Error('Failed to fetch Pokemon locations');
 	}
 	return response.json();
 }
@@ -111,9 +115,11 @@ export async function fetchPokemonLocations(nameOrId: string | number): Promise<
 export async function fetchPokemonSpecies(nameOrId: string | number): Promise<PokemonSpecies> {
 	const response = await fetch(`${BASE_URL}/pokemon-species/${nameOrId}`);
 	if (!response.ok) {
-		const error = `Failed to fetch species for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`;
-		console.error(error);
-		throw new Error(error);
+		// Log detailed error server-side only
+		if (import.meta.env.DEV) {
+			console.error(`Failed to fetch species for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+		}
+		throw new Error('Failed to fetch Pokemon species data');
 	}
 	return response.json();
 }

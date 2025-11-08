@@ -1,27 +1,55 @@
 <script lang="ts">
 	import { formatPokemonName, getTypeColor, fetchPokemonSpecies } from '$lib/api/pokeapi';
-	import { speakPokedexEntry } from '$lib/tts/elevenlabs';
+	import { speakPokedexEntry, stopAudio } from '$lib/tts/elevenlabs';
+	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { PokemonSpecies } from '$lib/api/pokeapi';
 
 	export let data: PageData;
 
-	let currentIndex = 0;
+	let currentIndex = data.initialIndex;
 	let isPlaying = false;
+	let ttsRequestInProgress = false; // Prevent race conditions
 	let showEntry = false;
 	let showShiny = false;
 	let speciesCache: Map<number, PokemonSpecies> = new Map();
 	let currentSpecies: PokemonSpecies | null = null;
+	let currentCry: HTMLAudioElement | null = null; // Track cry audio
+
+	// Update currentIndex when data.initialIndex changes (URL navigation)
+	$: currentIndex = data.initialIndex;
 
 	$: currentPokemon = data.pokemon[currentIndex];
 	const gridSquares = Array.from({ length: 10 });
 
+	// Stop cry audio
+	function stopCry() {
+		if (currentCry) {
+			currentCry.pause();
+			currentCry.src = '';
+			currentCry = null;
+		}
+	}
+
 	// Play Pokemon cry sound (browser only)
 	function playCry(cryUrl: string) {
 		if (typeof Audio !== 'undefined') {
+			// Stop previous cry if still playing
+			stopCry();
+
 			const audio = new Audio(cryUrl);
 			audio.volume = 0.5;
-			audio.play().catch(err => console.error('Error playing cry:', err));
+			currentCry = audio;
+
+			audio.onended = () => {
+				currentCry = null;
+			};
+
+			audio.play().catch(err => {
+				console.error('Error playing cry:', err);
+				currentCry = null;
+			});
 		}
 	}
 
@@ -32,15 +60,23 @@
 	}
 
 	function nextPokemon() {
-		currentIndex = (currentIndex + 1) % data.pokemon.length;
+		stopAudio(); // Stop TTS when navigating
+		stopCry(); // Stop cry when navigating
+		const newIndex = (currentIndex + 1) % data.pokemon.length;
+		const newId = data.pokemon[newIndex].id;
 		showEntry = false; // Reset to sprite view when navigating
 		showShiny = false; // Reset to normal sprite
+		goto(`${base}/${newId}`, { replaceState: true });
 	}
 
 	function previousPokemon() {
-		currentIndex = (currentIndex - 1 + data.pokemon.length) % data.pokemon.length;
+		stopAudio(); // Stop TTS when navigating
+		stopCry(); // Stop cry when navigating
+		const newIndex = (currentIndex - 1 + data.pokemon.length) % data.pokemon.length;
+		const newId = data.pokemon[newIndex].id;
 		showEntry = false; // Reset to sprite view when navigating
 		showShiny = false; // Reset to normal sprite
+		goto(`${base}/${newId}`, { replaceState: true });
 	}
 
 	function toggleShiny() {
@@ -67,9 +103,10 @@
 		showEntry = !showEntry;
 
 		// Autoplay when entering entry view
-		if (showEntry && !isPlaying) {
+		if (showEntry && !isPlaying && !ttsRequestInProgress) {
 			await loadSpeciesData();
 			if (currentSpecies) {
+				ttsRequestInProgress = true;
 				isPlaying = true;
 				try {
 					const entry = getPokedexEntry();
@@ -78,6 +115,7 @@
 					console.error('Error playing audio:', error);
 				} finally {
 					isPlaying = false;
+					ttsRequestInProgress = false;
 				}
 			}
 		}
@@ -755,24 +793,6 @@
 		justify-content: space-between;
 		align-items: center;
 		width: 100%;
-	}
-
-	.green-bar {
-		display: block;
-		background: linear-gradient(180deg, #2e8b57 0%, #0d4a2f 95%);
-		border: 3px solid #042517;
-		border-radius: 12px;
-		box-shadow: inset 0 3px 4px rgba(255, 255, 255, 0.25), 0 4px 0 #02160e;
-	}
-
-	.green-bar.large {
-		width: 110px;
-		height: 32px;
-	}
-
-	.green-bar.small {
-		width: 70px;
-		height: 22px;
 	}
 
 	.red-slot {

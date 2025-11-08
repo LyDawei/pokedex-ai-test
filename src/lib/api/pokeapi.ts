@@ -15,6 +15,16 @@ export interface PokemonSprites {
 			front_default: string;
 		};
 	};
+	versions?: {
+		'generation-v'?: {
+			'black-white'?: {
+				animated?: {
+					front_default: string | null;
+					front_shiny: string | null;
+				};
+			};
+		};
+	};
 }
 
 export interface PokemonStat {

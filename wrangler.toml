@@ -1,6 +1,6 @@
 name = "pokedexaitest"
 compatibility_date = "2025-11-08"
 
-# Deploy the built output from SvelteKit/Vercel adapter
-[site]
-bucket = ".svelte-kit/output/client"
+# Deploy the built SvelteKit output as static assets
+[assets]
+directory = ".svelte-kit/output/client"

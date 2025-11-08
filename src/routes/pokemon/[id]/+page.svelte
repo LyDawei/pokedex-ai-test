@@ -53,7 +53,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 	<link
-		href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap"
 		rel="stylesheet"
 	/>
 </svelte:head>
@@ -184,7 +184,7 @@
 		background: #1a1a2e;
 		min-height: 100vh;
 		margin: 0;
-		font-family: 'Press Start 2P', cursive;
+		font-family: 'Orbitron', sans-serif;
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
@@ -316,6 +316,7 @@
 		color: #2d2d2d;
 		margin-bottom: 0.8rem;
 		letter-spacing: 0.2rem;
+		font-weight: 600;
 	}
 
 	.entry-title {
@@ -324,6 +325,7 @@
 		margin: 0;
 		text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.3);
 		letter-spacing: 0.1rem;
+		font-weight: 800;
 	}
 
 	.pokedex-entry {
@@ -340,6 +342,7 @@
 		line-height: 1.8;
 		margin-bottom: 1rem;
 		letter-spacing: 0.05rem;
+		font-weight: 500;
 	}
 
 	.voice-button {
@@ -349,8 +352,9 @@
 		border: 3px solid rgba(0, 0, 0, 0.5);
 		border-radius: 8px;
 		padding: 1rem;
-		font-family: 'Press Start 2P', cursive;
+		font-family: 'Orbitron', sans-serif;
 		font-size: 0.6rem;
+		font-weight: 700;
 		cursor: pointer;
 		letter-spacing: 0.1rem;
 		transition: all 0.2s;
@@ -438,6 +442,7 @@
 		background: rgba(0, 0, 0, 0.15);
 		border: 3px solid rgba(0, 0, 0, 0.3);
 		border-radius: 4px;
+		font-weight: 700;
 	}
 
 	.stats-display {

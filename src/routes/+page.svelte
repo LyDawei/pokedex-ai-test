@@ -107,7 +107,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 	<link
-		href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap"
 		rel="stylesheet"
 	/>
 </svelte:head>
@@ -247,7 +247,7 @@
 		background: linear-gradient(135deg, #0e0d17 0%, #1c1b2d 100%);
 		min-height: 100vh;
 		margin: 0;
-		font-family: 'Press Start 2P', cursive;
+		font-family: 'Orbitron', sans-serif;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -565,6 +565,7 @@
 		letter-spacing: 0.05rem;
 		text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
 		text-align: center;
+		font-weight: 500;
 	}
 
 	.hinge {
@@ -684,11 +685,12 @@
 
 	.pokemon-name {
 		font-size: 1.1rem;
-		font-weight: bold;
+		font-weight: 800;
 	}
 
 	.info-label {
 		text-transform: uppercase;
+		font-weight: 600;
 	}
 
 	.types {
@@ -704,6 +706,7 @@
 		color: #fff;
 		border: 2px solid rgba(0, 0, 0, 0.35);
 		box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.25);
+		font-weight: 700;
 	}
 
 	.keypad {

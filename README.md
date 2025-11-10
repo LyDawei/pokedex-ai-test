@@ -1,22 +1,50 @@
-# sv
+# Pokédex AI
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+An interactive Pokédex application with AI-powered text-to-speech, built with SvelteKit.
 
-## Creating a project
+## Quick Start
 
-If you're seeing this, you've probably already done this step. Congrats!
+Make the setup script executable and run it:
 
 ```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+chmod +x setup.sh
+./setup.sh
 ```
 
-## Developing
+Note: This setup script is designed for macOS.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+This script will:
+- Check Node.js version (requires v18+, recommended v22.x)
+- Install all dependencies
+- Set up environment variables (prompts for ElevenLabs API key)
+- Run type checking
+- Verify build configuration
+- Optionally start the development server
+
+## Manual Setup
+
+If you prefer to set up manually:
+
+### 1. Install dependencies
+
+```sh
+npm install
+```
+
+### 2. Configure environment variables
+
+```sh
+cp .env.example .env
+```
+
+Edit `.env` and add your ElevenLabs API key:
+```
+ELEVENLABS_API_KEY=your_api_key_here
+```
+
+Get your API key from: https://elevenlabs.io/app/settings/api-keys
+
+### 3. Start development server
 
 ```sh
 npm run dev
@@ -24,6 +52,8 @@ npm run dev
 # or start the server and open the app in a new browser tab
 npm run dev -- --open
 ```
+
+The app will be available at: http://localhost:5173/projects/pokedex
 
 ## Building
 

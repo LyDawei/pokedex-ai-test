@@ -4,6 +4,7 @@
 	import { playDpadClick, playCenterButtonSound } from '$lib/audio/sounds';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import type { PokemonSpecies } from '$lib/api/pokeapi';
 	import Tutorial from '$lib/components/Tutorial.svelte';
@@ -21,6 +22,15 @@
 	let cryTimeout: ReturnType<typeof setTimeout> | null = null; // Track delayed cry
 	let shouldPlayCryAfterDelay = false; // Flag to control delayed cry playback
 	let tutorialComponent: any; // Reference to Tutorial component
+	let isUnfolded = false; // Track fold/unfold state
+
+	// Trigger unfold animation on page load
+	onMount(() => {
+		// Small delay to ensure initial render completes before animation
+		setTimeout(() => {
+			isUnfolded = true;
+		}, 100);
+	});
 
 	// Update currentIndex when data.initialIndex changes (URL navigation)
 	$: currentIndex = data.initialIndex;
@@ -148,6 +158,10 @@
 				} finally {
 					isPlaying = false;
 					ttsRequestInProgress = false;
+					// Return to stats view after TTS completes
+					setTimeout(() => {
+						showEntry = false;
+					}, 500);
 				}
 			}
 		}
@@ -182,11 +196,11 @@
 	/>
 </svelte:head>
 
-<div class="pokedex">
+<div class="pokedex" class:unfolded={isUnfolded}>
 	<section class="panel left-panel">
 		<div class="left-top">
 			<div class="lens">
-				<div class="lens-core">
+				<div class="lens-core" class:speaking={isPlaying}>
 					<div class="lens-highlight"></div>
 				</div>
 			</div>
@@ -195,14 +209,6 @@
 				<span class="indicator yellow"></span>
 				<span class="indicator green"></span>
 			</div>
-			<button
-				class="help-button"
-				onclick={() => tutorialComponent?.replayTutorial()}
-				aria-label="Show tutorial"
-				title="Show tutorial"
-			>
-				?
-			</button>
 		</div>
 
 		<div class="screen-housing">
@@ -260,6 +266,14 @@
 	<div class="hinge"></div>
 
 	<section class="panel right-panel">
+		<button
+			class="help-button"
+			onclick={() => tutorialComponent?.replayTutorial()}
+			aria-label="Show tutorial"
+			title="Show tutorial"
+		>
+			?
+		</button>
 		<div class="upper-display">
 			<div class="upper-frame">
 				<div class="upper-screen">
@@ -347,6 +361,8 @@
 		width: 100%;
 		gap: 0.5rem;
 		height: 660px;
+		perspective: 2000px;
+		perspective-origin: center center;
 	}
 
 	.panel {
@@ -361,12 +377,47 @@
 		width: 450px;
 		min-width: 450px;
 		max-width: 450px;
+		transform-style: preserve-3d;
+		transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	.left-panel {
 		border-radius: 28px 0 0 28px;
 		padding-top: 3.2rem;
 		gap: 2rem;
+		transform-origin: calc(100% + 14px) center;
+		transform: rotateY(180deg);
+		z-index: 2;
+		overflow: visible;
+		position: relative;
+	}
+
+	.left-panel::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, #e01025 0%, #bf001b 100%);
+		border: 4px solid #7a0612;
+		border-radius: 0 28px 28px 0;
+		box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.15), 0 20px 40px rgba(0, 0, 0, 0.4);
+		transform: rotateY(180deg);
+		backface-visibility: visible;
+		pointer-events: none;
+		z-index: 10;
+	}
+
+	.pokedex.unfolded .left-panel::after {
+		opacity: 0;
+		transition: opacity 0.1s ease 0.6s;
+	}
+
+	.left-panel > * {
+		backface-visibility: hidden;
+	}
+
+	.pokedex.unfolded .left-panel {
+		transform: rotateY(0deg);
+		z-index: 2;
 	}
 
 	.left-panel::before {
@@ -382,6 +433,12 @@
 		border-radius: 0 18px 18px 0;
 		transform: translateX(-60%);
 		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+		opacity: 0;
+		transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.pokedex.unfolded .left-panel::before {
+		opacity: 1;
 	}
 
 	.left-top {
@@ -411,6 +468,22 @@
 		border: 6px solid #f1f7ff;
 		position: relative;
 		box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 28px rgba(124, 234, 255, 0.5);
+		transition: all 0.3s ease;
+	}
+
+	.lens-core.speaking {
+		animation: lensFlash 0.8s ease-in-out infinite;
+	}
+
+	@keyframes lensFlash {
+		0%, 100% {
+			background: radial-gradient(circle at 30% 30%, #7ceaff, #1a9ed9 55%, #015d8c);
+			box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 28px rgba(124, 234, 255, 0.5);
+		}
+		50% {
+			background: radial-gradient(circle at 30% 30%, #e0f9ff, #7ceaff 55%, #3db3e0);
+			box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 50px rgba(124, 234, 255, 1), 0 0 80px rgba(124, 234, 255, 0.8);
+		}
 	}
 
 	.lens-highlight {
@@ -455,8 +528,8 @@
 
 	.help-button {
 		position: absolute;
-		top: 1.5rem;
-		right: 1.5rem;
+		top: 1rem;
+		right: 1rem;
 		width: 36px;
 		height: 36px;
 		border-radius: 50%;
@@ -474,7 +547,7 @@
 			0 0 10px rgba(0, 255, 0, 0.5),
 			inset 0 2px 4px rgba(255, 255, 255, 0.3);
 		transition: all 0.3s ease;
-		z-index: 10;
+		z-index: 100;
 	}
 
 	.help-button:hover {
@@ -676,16 +749,19 @@
 		align-items: center;
 		justify-content: center;
 		padding: 1.5rem;
+		overflow: hidden;
+		position: relative;
 	}
 
 	.entry-view-text {
 		color: #00ff00;
-		font-size: 0.6rem;
+		font-size: 1rem;
 		line-height: 1.8;
 		letter-spacing: 0.05rem;
 		text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
 		text-align: center;
 		font-weight: 500;
+		width: 100%;
 	}
 
 	.hinge {
@@ -696,6 +772,12 @@
 		box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), inset 0 -3px 6px rgba(0, 0, 0, 0.5);
 		position: relative;
 		height: 100%;
+		opacity: 0;
+		transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.pokedex.unfolded .hinge {
+		opacity: 1;
 	}
 
 	.hinge::before,
@@ -726,6 +808,14 @@
 		gap: 2.2rem;
 		padding-top: 3rem;
 		justify-content: space-between;
+		transform-origin: calc(0% - 14px) center;
+		transform: rotateY(0deg);
+		z-index: 1;
+	}
+
+	.pokedex.unfolded .right-panel {
+		transform: rotateY(0deg);
+		z-index: 1;
 	}
 
 	.upper-display {
@@ -915,6 +1005,7 @@
 			grid-template-columns: 1fr;
 			max-width: 540px;
 			height: auto;
+			perspective: none;
 		}
 
 		.panel {
@@ -923,10 +1014,26 @@
 
 		.left-panel {
 			border-radius: 28px 28px 0 0;
+			transform-origin: bottom center;
+			transform: rotateX(180deg);
+			z-index: 2;
+		}
+
+		.pokedex.unfolded .left-panel {
+			transform: rotateX(0deg);
+			z-index: 2;
 		}
 
 		.right-panel {
 			border-radius: 0 0 28px 28px;
+			transform-origin: top center;
+			transform: rotateX(0deg);
+			z-index: 1;
+		}
+
+		.pokedex.unfolded .right-panel {
+			transform: rotateX(0deg);
+			z-index: 1;
 		}
 
 		.hinge {

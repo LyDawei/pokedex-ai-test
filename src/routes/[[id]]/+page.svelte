@@ -5,6 +5,7 @@
 	import { base } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { PokemonSpecies } from '$lib/api/pokeapi';
+	import Tutorial from '$lib/components/Tutorial.svelte';
 
 	export let data: PageData;
 
@@ -16,6 +17,7 @@
 	let speciesCache: Map<number, PokemonSpecies> = new Map();
 	let currentSpecies: PokemonSpecies | null = null;
 	let currentCry: HTMLAudioElement | null = null; // Track cry audio
+	let tutorialComponent: any; // Reference to Tutorial component
 
 	// Update currentIndex when data.initialIndex changes (URL navigation)
 	$: currentIndex = data.initialIndex;
@@ -163,24 +165,26 @@
 				<span class="indicator yellow"></span>
 				<span class="indicator green"></span>
 			</div>
+			<button
+				class="help-button"
+				onclick={() => tutorialComponent?.replayTutorial()}
+				aria-label="Show tutorial"
+				title="Show tutorial"
+			>
+				?
+			</button>
 		</div>
 
 		<div class="screen-housing">
 			<div class="screen-frame">
 				<div class="screen-bezel">
 					<div class="screen-display">
-						{#if showEntry}
-							<div class="entry-view">
-								<div class="entry-view-text">{getPokedexEntry()}</div>
-							</div>
-						{:else}
-							<img
-								src={showShiny
-									? (currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_shiny || currentPokemon.sprites.front_shiny)
-									: (currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_default || currentPokemon.sprites.front_default)}
-								alt={currentPokemon.name}
-							/>
-						{/if}
+						<img
+							src={showShiny
+								? (currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_shiny || currentPokemon.sprites.front_shiny)
+								: (currentPokemon.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_default || currentPokemon.sprites.front_default)}
+							alt={currentPokemon.name}
+						/>
 					</div>
 				</div>
 			</div>
@@ -201,24 +205,24 @@
 				<button
 					class="direction direction-up"
 					aria-label="Toggle shiny"
-					on:click={toggleShiny}
+					onclick={toggleShiny}
 				></button>
 				<button
 					class="direction direction-right"
 					aria-label="Next Pokémon"
-					on:click={nextPokemon}
+					onclick={nextPokemon}
 				></button>
 				<button
 					class="direction direction-down"
 					aria-label="Toggle shiny"
-					on:click={toggleShiny}
+					onclick={toggleShiny}
 				></button>
 				<button
 					class="direction direction-left"
 					aria-label="Previous Pokémon"
-					on:click={previousPokemon}
+					onclick={previousPokemon}
 				></button>
-				<button class="direction-center" aria-label="Toggle entry" on:click={toggleEntryView}></button>
+				<button class="direction-center" aria-label="Toggle entry" onclick={toggleEntryView}></button>
 			</div>
 		</div>
 	</section>
@@ -229,6 +233,11 @@
 		<div class="upper-display">
 			<div class="upper-frame">
 				<div class="upper-screen">
+					{#if showEntry}
+						<div class="entry-view">
+							<div class="entry-view-text">{getPokedexEntry()}</div>
+						</div>
+					{:else}
 					<div class="info-stack">
 						<div class="info-row">
 							<span class="info-label">NO.</span>
@@ -257,6 +266,7 @@
 							<span class="info-value">{(currentPokemon.weight / 10).toFixed(1)}kg</span>
 						</div>
 					</div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -279,6 +289,8 @@
 		</div>
 	</section>
 </div>
+
+<Tutorial bind:this={tutorialComponent} />
 
 <style>
 	:global(body) {
@@ -343,6 +355,7 @@
 	}
 
 	.left-top {
+		position: relative;
 		display: flex;
 		align-items: flex-end;
 		justify-content: space-between;
@@ -408,6 +421,45 @@
 
 	.indicator.green {
 		background: radial-gradient(circle at 35% 35%, #8cf7a7, #2e983d 70%, #0c4216);
+	}
+
+	.help-button {
+		position: absolute;
+		top: 1.5rem;
+		right: 1.5rem;
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #00ff00 0%, #00cc00 100%);
+		border: 3px solid #006600;
+		color: #000000;
+		font-family: 'Orbitron', sans-serif;
+		font-size: 1.2rem;
+		font-weight: 700;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow:
+			0 0 10px rgba(0, 255, 0, 0.5),
+			inset 0 2px 4px rgba(255, 255, 255, 0.3);
+		transition: all 0.3s ease;
+		z-index: 10;
+	}
+
+	.help-button:hover {
+		background: linear-gradient(135deg, #00ff00 0%, #00dd00 100%);
+		box-shadow:
+			0 0 20px rgba(0, 255, 0, 0.8),
+			inset 0 2px 4px rgba(255, 255, 255, 0.4);
+		transform: scale(1.1);
+	}
+
+	.help-button:active {
+		transform: scale(0.95);
+		box-shadow:
+			0 0 15px rgba(0, 255, 0, 0.6),
+			inset 0 2px 4px rgba(255, 255, 255, 0.3);
 	}
 
 	.screen-housing {

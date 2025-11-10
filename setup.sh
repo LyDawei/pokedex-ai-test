@@ -62,11 +62,7 @@ fi
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
 if [ "$NODE_VERSION" -lt 18 ]; then
     print_warning "Node.js version $(node -v) detected. Recommended: v22.x"
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    print_warning "Continuing with current version..."
 else
     print_success "Node.js $(node -v) detected"
 fi
@@ -91,39 +87,21 @@ fi
 # Step 4: Setup environment variables
 print_step "Setting up environment configuration..."
 
+# Find the master worktree root
+MASTER_WORKTREE=$(git worktree list | grep '\[master\]' | awk '{print $1}')
+
 if [ -f .env ]; then
-    print_warning ".env file already exists"
-    read -p "Overwrite existing .env file? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        print_warning "Skipping .env setup"
-        SKIP_ENV=true
-    fi
-fi
-
-if [ "$SKIP_ENV" != true ]; then
-    # Prompt for ElevenLabs API key
-    echo ""
-    echo "ElevenLabs API Key Setup"
-    echo "------------------------"
-    echo "This application uses ElevenLabs for text-to-speech functionality."
-    echo "You can get your API key from: https://elevenlabs.io/app/settings/api-keys"
-    echo ""
-
-    read -p "Enter your ElevenLabs API key (or press Enter to skip): " ELEVENLABS_KEY
-
-    if [ -z "$ELEVENLABS_KEY" ]; then
-        print_warning "No API key provided. Copying .env.example to .env"
-        cp .env.example .env
-        chmod 600 .env
-        print_warning "Please edit .env and add your ElevenLabs API key before running the app"
-    else
-        # Create .env file with provided API key (using echo to avoid process list exposure)
-        echo "ELEVENLABS_API_KEY=$ELEVENLABS_KEY" > .env
-        echo "ELEVENLABS_VOICE_ID=duIivFCQWvNj2G0O7aV2" >> .env
-        chmod 600 .env
-        print_success ".env file created with your API key (permissions: 600)"
-    fi
+    print_warning ".env file already exists - keeping existing configuration"
+elif [ -n "$MASTER_WORKTREE" ] && [ -f "$MASTER_WORKTREE/.env" ]; then
+    print_step "Copying .env from master worktree..."
+    cp "$MASTER_WORKTREE/.env" .env
+    chmod 600 .env
+    print_success ".env file copied from master worktree"
+else
+    print_warning "No .env found in master worktree. Copying .env.example to .env"
+    cp .env.example .env
+    chmod 600 .env
+    print_warning "Please edit .env and add your ElevenLabs API key before running the app"
 fi
 
 # Step 5: Run type checking
@@ -131,13 +109,8 @@ print_step "Running TypeScript type checking..."
 if npm run check; then
     print_success "Type checking passed"
 else
-    print_error "Type checking failed"
-    echo "You may need to fix type errors before running the app"
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    print_warning "Type checking failed - continuing anyway"
+    print_warning "You may need to fix type errors before running the app"
 fi
 
 # Step 6: Build verification (optional)
@@ -169,13 +142,6 @@ echo "     ${GREEN}npm run build${NC}"
 echo "     ${GREEN}npm run preview${NC}"
 echo ""
 
-# Step 8: Offer to start dev server
-read -p "Start development server now? (Y/n): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-    print_step "Starting development server..."
-    echo ""
-    npm run dev
-else
-    echo "Run ${GREEN}npm run dev${NC} when you're ready to start!"
-fi
+# Step 8: Setup complete - no interactive server start
+echo "Run ${GREEN}npm run dev${NC} when you're ready to start!"
+echo "Or use the Conductor 'run' command to start the development server."

@@ -77,8 +77,14 @@ export async function playAudio(audioBuffer: ArrayBuffer): Promise<void> {
 
 /**
  * Speak Pokedex entry with Dexter-style voice
+ * First speaks the pokemon name, then the entry text
  */
-export async function speakPokedexEntry(entry: string): Promise<void> {
-	const audioBuffer = await textToSpeech(entry);
-	await playAudio(audioBuffer);
+export async function speakPokedexEntry(name: string, entry: string): Promise<void> {
+	// Speak the pokemon name first
+	const nameBuffer = await textToSpeech(name);
+	await playAudio(nameBuffer);
+
+	// Then speak the entry text
+	const entryBuffer = await textToSpeech(entry);
+	await playAudio(entryBuffer);
 }

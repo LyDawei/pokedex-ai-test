@@ -151,10 +151,11 @@
 				ttsRequestInProgress = true;
 				isPlaying = true;
 				try {
+					const pokemonName = formatPokemonName(currentPokemon.name);
 					const entry = getPokedexEntry();
 					// Estimate scroll duration based on text length (slower scroll - roughly 100 characters per 15 seconds)
 					scrollDuration = Math.max(12, Math.min(30, entry.length / 7));
-					await speakPokedexEntry(entry);
+					await speakPokedexEntry(pokemonName, entry);
 				} catch (error) {
 					console.error('Error playing audio:', error);
 				} finally {

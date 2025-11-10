@@ -140,8 +140,9 @@
 				ttsRequestInProgress = true;
 				isPlaying = true;
 				try {
+					const pokemonName = formatPokemonName(currentPokemon.name);
 					const entry = getPokedexEntry();
-					await speakPokedexEntry(entry);
+					await speakPokedexEntry(pokemonName, entry);
 				} catch (error) {
 					console.error('Error playing audio:', error);
 				} finally {

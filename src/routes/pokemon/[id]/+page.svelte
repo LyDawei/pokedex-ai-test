@@ -37,8 +37,9 @@
 
 		isPlaying = true;
 		try {
+			const pokemonName = formatPokemonName(pokemon.name);
 			const entry = getPokedexEntry();
-			await speakPokedexEntry(entry);
+			await speakPokedexEntry(pokemonName, entry);
 		} catch (error) {
 			console.error('Error playing audio:', error);
 			alert('Failed to play audio. Please check your API key.');

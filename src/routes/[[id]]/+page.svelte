@@ -23,7 +23,6 @@
 	let shouldPlayCryAfterDelay = false; // Flag to control delayed cry playback
 	let tutorialComponent: any; // Reference to Tutorial component
 	let isUnfolded = false; // Track fold/unfold state
-	let scrollDuration = 10; // Duration for text scrolling in seconds
 
 	// Trigger unfold animation on page load
 	onMount(() => {
@@ -153,8 +152,6 @@
 				try {
 					const pokemonName = formatPokemonName(currentPokemon.name);
 					const entry = getPokedexEntry();
-					// Estimate scroll duration based on text length (slower scroll - roughly 100 characters per 15 seconds)
-					scrollDuration = Math.max(12, Math.min(30, entry.length / 7));
 					await speakPokedexEntry(pokemonName, entry);
 				} catch (error) {
 					console.error('Error playing audio:', error);

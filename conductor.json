@@ -1,6 +1,6 @@
 {
   "scripts": {
     "setup": "./setup.sh",
-    "run": "npm run dev"
+    "run": "npm run dev -- --open /projects/pokedex"
   }
 }

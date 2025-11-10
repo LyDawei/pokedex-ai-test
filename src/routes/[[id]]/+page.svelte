@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { formatPokemonName, getTypeColor, fetchPokemonSpecies } from '$lib/api/pokeapi';
 	import { speakPokedexEntry, stopAudio } from '$lib/tts/elevenlabs';
+	import { playDpadClick, playCenterButtonSound } from '$lib/audio/sounds';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import type { PageData } from './$types';
@@ -17,6 +18,8 @@
 	let speciesCache: Map<number, PokemonSpecies> = new Map();
 	let currentSpecies: PokemonSpecies | null = null;
 	let currentCry: HTMLAudioElement | null = null; // Track cry audio
+	let cryTimeout: ReturnType<typeof setTimeout> | null = null; // Track delayed cry
+	let shouldPlayCryAfterDelay = false; // Flag to control delayed cry playback
 	let tutorialComponent: any; // Reference to Tutorial component
 
 	// Update currentIndex when data.initialIndex changes (URL navigation)
@@ -27,6 +30,12 @@
 
 	// Stop cry audio
 	function stopCry() {
+		// Clear any pending cry timeout
+		if (cryTimeout) {
+			clearTimeout(cryTimeout);
+			cryTimeout = null;
+		}
+
 		if (currentCry) {
 			currentCry.pause();
 			currentCry.src = '';
@@ -34,36 +43,52 @@
 		}
 	}
 
-	// Play Pokemon cry sound (browser only)
-	function playCry(cryUrl: string) {
+	// Play Pokemon cry sound (browser only) with optional delay
+	function playCry(cryUrl: string, delay: number = 0) {
 		if (typeof Audio !== 'undefined') {
 			// Stop previous cry if still playing
 			stopCry();
 
-			const audio = new Audio(cryUrl);
-			audio.volume = 0.5;
-			currentCry = audio;
+			const playAudio = () => {
+				const audio = new Audio(cryUrl);
+				audio.volume = 0.5;
+				currentCry = audio;
 
-			audio.onended = () => {
-				currentCry = null;
+				audio.onended = () => {
+					currentCry = null;
+				};
+
+				audio.play().catch(err => {
+					console.error('Error playing cry:', err);
+					currentCry = null;
+				});
 			};
 
-			audio.play().catch(err => {
-				console.error('Error playing cry:', err);
-				currentCry = null;
-			});
+			if (delay > 0) {
+				cryTimeout = setTimeout(playAudio, delay);
+			} else {
+				playAudio();
+			}
 		}
 	}
 
 	// Watch for Pokemon changes and play cry + preload species data
 	$: if (currentPokemon && typeof window !== 'undefined') {
-		playCry(currentPokemon.cries.legacy); // Using legacy for classic 90s sound
+		// Only play cry with delay if flag is set (from D-pad navigation)
+		if (shouldPlayCryAfterDelay) {
+			playCry(currentPokemon.cries.legacy, 300); // 300ms delay after click sound
+			shouldPlayCryAfterDelay = false;
+		} else {
+			playCry(currentPokemon.cries.legacy); // Immediate for initial load
+		}
 		loadSpeciesData(); // Preload species data in background
 	}
 
 	function nextPokemon() {
+		playDpadClick(); // Play D-pad click sound
 		stopAudio(); // Stop TTS when navigating
 		stopCry(); // Stop cry when navigating
+		shouldPlayCryAfterDelay = true; // Flag to play cry with delay after click
 		const newIndex = (currentIndex + 1) % data.pokemon.length;
 		const newId = data.pokemon[newIndex].id;
 		showEntry = false; // Reset to sprite view when navigating
@@ -72,8 +97,10 @@
 	}
 
 	function previousPokemon() {
+		playDpadClick(); // Play D-pad click sound
 		stopAudio(); // Stop TTS when navigating
 		stopCry(); // Stop cry when navigating
+		shouldPlayCryAfterDelay = true; // Flag to play cry with delay after click
 		const newIndex = (currentIndex - 1 + data.pokemon.length) % data.pokemon.length;
 		const newId = data.pokemon[newIndex].id;
 		showEntry = false; // Reset to sprite view when navigating
@@ -83,6 +110,7 @@
 
 	function toggleShiny() {
 		if (!showEntry) {
+			playDpadClick(); // Play D-pad click sound
 			showShiny = !showShiny;
 		}
 	}
@@ -102,6 +130,7 @@
 	}
 
 	async function toggleEntryView() {
+		playCenterButtonSound(); // Play center button sound
 		showEntry = !showEntry;
 
 		// Autoplay when entering entry view

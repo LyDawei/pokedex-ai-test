@@ -2,8 +2,10 @@ import { error } from '@sveltejs/kit';
 import {
 	fetchPokemonList,
 	fetchPokemon,
+	fetchPokemonSpecies,
 	getPokemonIdFromUrl,
-	type Pokemon
+	type Pokemon,
+	type PokemonSpecies
 } from '$lib/api/pokeapi';
 import type { PageLoad } from './$types';
 
@@ -38,6 +40,17 @@ export const load: PageLoad = async ({ params }) => {
 
 		// Fetch detailed data in batches to avoid rate limiting
 		const pokemonData = await fetchInBatches<Pokemon>(itemsWithIds, fetchPokemon, 20);
+
+		// Prefetch all species data to cache it for later use
+		// This prevents hitting the API when navigating between Pokemon
+		// Run in background - don't wait for it to complete
+		fetchInBatches<PokemonSpecies>(itemsWithIds, fetchPokemonSpecies, 20)
+			.then(() => {
+				console.log('[Cache] Successfully cached all 151 Pokemon species data');
+			})
+			.catch((err) => {
+				console.warn('[Cache] Failed to prefetch species data:', err);
+			});
 
 		// Parse the optional ID parameter
 		const requestedId = params.id ? parseInt(params.id, 10) : null;

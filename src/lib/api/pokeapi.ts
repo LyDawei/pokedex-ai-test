@@ -2,6 +2,48 @@
 
 const BASE_URL = 'https://pokeapi.co/api/v2';
 
+/**
+ * Retry a fetch operation with exponential backoff
+ */
+async function fetchWithRetry(
+	url: string,
+	options: RequestInit = {},
+	maxRetries = 3,
+	baseDelay = 1000
+): Promise<Response> {
+	let lastError: Error | null = null;
+
+	for (let attempt = 0; attempt < maxRetries; attempt++) {
+		try {
+			const response = await fetch(url, options);
+
+			// If rate limited, wait and retry (but only if we have retries left)
+			if (response.status === 429 && attempt < maxRetries - 1) {
+				const retryAfter = response.headers.get('Retry-After');
+				// Handle numeric seconds format (ignore date format)
+				const retrySeconds = retryAfter ? parseInt(retryAfter, 10) : NaN;
+				const delay = !isNaN(retrySeconds)
+					? retrySeconds * 1000
+					: baseDelay * Math.pow(2, attempt);
+				await new Promise((resolve) => setTimeout(resolve, delay));
+				continue;
+			}
+
+			return response;
+		} catch (error) {
+			lastError = error instanceof Error ? error : new Error(String(error));
+
+			// Don't retry on the last attempt
+			if (attempt < maxRetries - 1) {
+				const delay = baseDelay * Math.pow(2, attempt);
+				await new Promise((resolve) => setTimeout(resolve, delay));
+			}
+		}
+	}
+
+	throw lastError || new Error('Failed after max retries');
+}
+
 export interface PokemonListItem {
 	name: string;
 	url: string;
@@ -83,7 +125,7 @@ export interface PokemonSpecies {
  * Fetch a list of Pokemon with pagination
  */
 export async function fetchPokemonList(limit = 151, offset = 0): Promise<PokemonListItem[]> {
-	const response = await fetch(`${BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
+	const response = await fetchWithRetry(`${BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
 	if (!response.ok) throw new Error('Failed to fetch Pokemon list');
 	const data = await response.json();
 	return data.results;
@@ -93,7 +135,7 @@ export async function fetchPokemonList(limit = 151, offset = 0): Promise<Pokemon
  * Fetch detailed information about a specific Pokemon
  */
 export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> {
-	const response = await fetch(`${BASE_URL}/pokemon/${nameOrId}`);
+	const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}`);
 	if (!response.ok) {
 		// Log detailed error server-side only
 		if (import.meta.env.DEV) {
@@ -108,7 +150,7 @@ export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> 
  * Fetch location encounters for a specific Pokemon
  */
 export async function fetchPokemonLocations(nameOrId: string | number): Promise<LocationArea[]> {
-	const response = await fetch(`${BASE_URL}/pokemon/${nameOrId}/encounters`);
+	const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}/encounters`);
 	if (!response.ok) {
 		// Log detailed error server-side only
 		if (import.meta.env.DEV) {
@@ -123,7 +165,7 @@ export async function fetchPokemonLocations(nameOrId: string | number): Promise<
  * Fetch Pokemon species data including Pokedex entries
  */
 export async function fetchPokemonSpecies(nameOrId: string | number): Promise<PokemonSpecies> {
-	const response = await fetch(`${BASE_URL}/pokemon-species/${nameOrId}`);
+	const response = await fetchWithRetry(`${BASE_URL}/pokemon-species/${nameOrId}`);
 	if (!response.ok) {
 		// Log detailed error server-side only
 		if (import.meta.env.DEV) {

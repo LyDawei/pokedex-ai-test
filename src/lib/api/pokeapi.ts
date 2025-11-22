@@ -1,4 +1,5 @@
 // PokeAPI service for fetching Pokemon data
+import { getFromCache, setInCache } from '$lib/cache';
 
 const BASE_URL = 'https://pokeapi.co/api/v2';
 
@@ -125,16 +126,45 @@ export interface PokemonSpecies {
  * Fetch a list of Pokemon with pagination
  */
 export async function fetchPokemonList(limit = 151, offset = 0): Promise<PokemonListItem[]> {
+	const cacheKey = `pokemon_list_${limit}_${offset}`;
+
+	// Check cache first
+	const cached = getFromCache<PokemonListItem[]>(cacheKey);
+	if (cached) {
+		if (import.meta.env.DEV) {
+			console.log(`[Cache HIT] Pokemon list (${limit} items)`);
+		}
+		return cached;
+	}
+
+	// Fetch from API
+	if (import.meta.env.DEV) {
+		console.log(`[Cache MISS] Fetching Pokemon list from API (${limit} items)`);
+	}
 	const response = await fetchWithRetry(`${BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
 	if (!response.ok) throw new Error('Failed to fetch Pokemon list');
 	const data = await response.json();
-	return data.results;
+	const results = data.results;
+
+	// Store in cache
+	setInCache(cacheKey, results);
+
+	return results;
 }
 
 /**
  * Fetch detailed information about a specific Pokemon
  */
 export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> {
+	const cacheKey = `pokemon_${nameOrId}`;
+
+	// Check cache first
+	const cached = getFromCache<Pokemon>(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
+	// Fetch from API
 	const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}`);
 	if (!response.ok) {
 		// Log detailed error server-side only
@@ -143,13 +173,27 @@ export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> 
 		}
 		throw new Error('Failed to fetch Pokemon data');
 	}
-	return response.json();
+	const data = await response.json();
+
+	// Store in cache
+	setInCache(cacheKey, data);
+
+	return data;
 }
 
 /**
  * Fetch location encounters for a specific Pokemon
  */
 export async function fetchPokemonLocations(nameOrId: string | number): Promise<LocationArea[]> {
+	const cacheKey = `locations_${nameOrId}`;
+
+	// Check cache first
+	const cached = getFromCache<LocationArea[]>(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
+	// Fetch from API
 	const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}/encounters`);
 	if (!response.ok) {
 		// Log detailed error server-side only
@@ -158,13 +202,33 @@ export async function fetchPokemonLocations(nameOrId: string | number): Promise<
 		}
 		throw new Error('Failed to fetch Pokemon locations');
 	}
-	return response.json();
+	const data = await response.json();
+
+	// Store in cache
+	setInCache(cacheKey, data);
+
+	return data;
 }
 
 /**
  * Fetch Pokemon species data including Pokedex entries
  */
 export async function fetchPokemonSpecies(nameOrId: string | number): Promise<PokemonSpecies> {
+	const cacheKey = `species_${nameOrId}`;
+
+	// Check cache first
+	const cached = getFromCache<PokemonSpecies>(cacheKey);
+	if (cached) {
+		if (import.meta.env.DEV) {
+			console.log(`[Cache HIT] Species data for ${nameOrId}`);
+		}
+		return cached;
+	}
+
+	// Fetch from API
+	if (import.meta.env.DEV) {
+		console.log(`[Cache MISS] Fetching species data for ${nameOrId} from API`);
+	}
 	const response = await fetchWithRetry(`${BASE_URL}/pokemon-species/${nameOrId}`);
 	if (!response.ok) {
 		// Log detailed error server-side only
@@ -173,7 +237,12 @@ export async function fetchPokemonSpecies(nameOrId: string | number): Promise<Po
 		}
 		throw new Error('Failed to fetch Pokemon species data');
 	}
-	return response.json();
+	const data = await response.json();
+
+	// Store in cache
+	setInCache(cacheKey, data);
+
+	return data;
 }
 
 /**

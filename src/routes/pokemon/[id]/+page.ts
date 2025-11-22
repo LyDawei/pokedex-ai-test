@@ -2,7 +2,7 @@ import { fetchPokemon, fetchPokemonLocations, fetchPokemonSpecies } from '$lib/a
 import type { PageLoad } from './$types';
 import { error } from '@sveltejs/kit';
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ params, fetch }) => {
 	try {
 		const pokemonId = parseInt(params.id);
 
@@ -11,9 +11,9 @@ export const load: PageLoad = async ({ params }) => {
 		}
 
 		const [pokemon, locations, species] = await Promise.all([
-			fetchPokemon(pokemonId),
-			fetchPokemonLocations(pokemonId),
-			fetchPokemonSpecies(pokemonId)
+			fetchPokemon(pokemonId, fetch),
+			fetchPokemonLocations(pokemonId, fetch),
+			fetchPokemonSpecies(pokemonId, fetch)
 		]);
 
 		return {

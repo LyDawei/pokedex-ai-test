@@ -1,7 +1,28 @@
 // PokeAPI service for fetching Pokemon data
 import { getFromCache, setInCache } from '$lib/cache';
+import { base } from '$app/paths';
+import { dev } from '$app/environment';
 
 const BASE_URL = 'https://pokeapi.co/api/v2';
+const USE_LOCAL_DATA = true; // Use local cached Pokemon data instead of PokeAPI
+
+// Helper to get the local data URL (works both server-side and client-side)
+function getLocalDataUrl(filename: string): string {
+	// In development, files are served from the dev server
+	// In production/SSR, we use absolute path that works everywhere
+	return `${base}/data/${filename}`;
+}
+
+// Helper to load data from local files using fetch (universal)
+async function loadLocalData<T>(filename: string, fetchFn: typeof fetch = fetch): Promise<T> {
+	const url = getLocalDataUrl(filename);
+	if (dev) {
+		console.log(`[LOCAL DATA] Loading ${filename}`);
+	}
+	const response = await fetchFn(url);
+	if (!response.ok) throw new Error(`Failed to load ${filename}`);
+	return await response.json();
+}
 
 /**
  * Retry a fetch operation with exponential backoff
@@ -125,7 +146,11 @@ export interface PokemonSpecies {
 /**
  * Fetch a list of Pokemon with pagination
  */
-export async function fetchPokemonList(limit = 151, offset = 0): Promise<PokemonListItem[]> {
+export async function fetchPokemonList(
+	limit = 151,
+	offset = 0,
+	fetchFn: typeof fetch = fetch
+): Promise<PokemonListItem[]> {
 	const cacheKey = `pokemon_list_${limit}_${offset}`;
 
 	// Check cache first
@@ -137,14 +162,28 @@ export async function fetchPokemonList(limit = 151, offset = 0): Promise<Pokemon
 		return cached;
 	}
 
-	// Fetch from API
-	if (import.meta.env.DEV) {
-		console.log(`[Cache MISS] Fetching Pokemon list from API (${limit} items)`);
+	let results: PokemonListItem[];
+
+	if (USE_LOCAL_DATA) {
+		// Load from local data
+		if (import.meta.env.DEV) {
+			console.log(`[LOCAL DATA] Loading Pokemon list from static files`);
+		}
+		const data = await loadLocalData<{ results: PokemonListItem[] }>(
+			'pokemon-list.json',
+			fetchFn
+		);
+		results = data.results.slice(offset, offset + limit);
+	} else {
+		// Fetch from API
+		if (import.meta.env.DEV) {
+			console.log(`[Cache MISS] Fetching Pokemon list from API (${limit} items)`);
+		}
+		const response = await fetchWithRetry(`${BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
+		if (!response.ok) throw new Error('Failed to fetch Pokemon list');
+		const data = await response.json();
+		results = data.results;
 	}
-	const response = await fetchWithRetry(`${BASE_URL}/pokemon?limit=${limit}&offset=${offset}`);
-	if (!response.ok) throw new Error('Failed to fetch Pokemon list');
-	const data = await response.json();
-	const results = data.results;
 
 	// Store in cache
 	setInCache(cacheKey, results);
@@ -155,7 +194,10 @@ export async function fetchPokemonList(limit = 151, offset = 0): Promise<Pokemon
 /**
  * Fetch detailed information about a specific Pokemon
  */
-export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> {
+export async function fetchPokemon(
+	nameOrId: string | number,
+	fetchFn: typeof fetch = fetch
+): Promise<Pokemon> {
 	const cacheKey = `pokemon_${nameOrId}`;
 
 	// Check cache first
@@ -164,16 +206,39 @@ export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> 
 		return cached;
 	}
 
-	// Fetch from API
-	const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}`);
-	if (!response.ok) {
-		// Log detailed error server-side only
-		if (import.meta.env.DEV) {
-			console.error(`Failed to fetch Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+	let data: Pokemon;
+
+	if (USE_LOCAL_DATA) {
+		// Load from local data
+		const id = typeof nameOrId === 'number' ? nameOrId : nameOrId;
+		try {
+			// Try to load individual file first
+			try {
+				data = await loadLocalData<Pokemon>(`pokemon-${id}.json`, fetchFn);
+			} catch {
+				// Fallback to combined file
+				const allPokemon = await loadLocalData<Pokemon[]>('all-pokemon.json', fetchFn);
+				const pokemon = allPokemon.find(
+					(p) => p.id === nameOrId || p.name === nameOrId
+				);
+				if (!pokemon) throw new Error(`Pokemon not found: ${nameOrId}`);
+				data = pokemon;
+			}
+		} catch (error) {
+			throw new Error(`Failed to load Pokemon data: ${error}`);
 		}
-		throw new Error('Failed to fetch Pokemon data');
+	} else {
+		// Fetch from API
+		const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}`);
+		if (!response.ok) {
+			// Log detailed error server-side only
+			if (import.meta.env.DEV) {
+				console.error(`Failed to fetch Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+			}
+			throw new Error('Failed to fetch Pokemon data');
+		}
+		data = await response.json();
 	}
-	const data = await response.json();
 
 	// Store in cache
 	setInCache(cacheKey, data);
@@ -184,7 +249,10 @@ export async function fetchPokemon(nameOrId: string | number): Promise<Pokemon> 
 /**
  * Fetch location encounters for a specific Pokemon
  */
-export async function fetchPokemonLocations(nameOrId: string | number): Promise<LocationArea[]> {
+export async function fetchPokemonLocations(
+	nameOrId: string | number,
+	fetchFn: typeof fetch = fetch
+): Promise<LocationArea[]> {
 	const cacheKey = `locations_${nameOrId}`;
 
 	// Check cache first
@@ -193,16 +261,38 @@ export async function fetchPokemonLocations(nameOrId: string | number): Promise<
 		return cached;
 	}
 
-	// Fetch from API
-	const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}/encounters`);
-	if (!response.ok) {
-		// Log detailed error server-side only
-		if (import.meta.env.DEV) {
-			console.error(`Failed to fetch locations for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+	let data: LocationArea[];
+
+	if (USE_LOCAL_DATA) {
+		// Load from local data
+		const id = typeof nameOrId === 'number' ? nameOrId : nameOrId;
+		try {
+			// Try individual file first
+			try {
+				data = await loadLocalData<LocationArea[]>(`locations-${id}.json`, fetchFn);
+			} catch {
+				// Fallback to combined file
+				const allLocations = await loadLocalData<Record<string, LocationArea[]>>(
+					'all-locations.json',
+					fetchFn
+				);
+				data = allLocations[id.toString()] || [];
+			}
+		} catch (error) {
+			throw new Error(`Failed to load location data: ${error}`);
 		}
-		throw new Error('Failed to fetch Pokemon locations');
+	} else {
+		// Fetch from API
+		const response = await fetchWithRetry(`${BASE_URL}/pokemon/${nameOrId}/encounters`);
+		if (!response.ok) {
+			// Log detailed error server-side only
+			if (import.meta.env.DEV) {
+				console.error(`Failed to fetch locations for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+			}
+			throw new Error('Failed to fetch Pokemon locations');
+		}
+		data = await response.json();
 	}
-	const data = await response.json();
 
 	// Store in cache
 	setInCache(cacheKey, data);
@@ -213,7 +303,10 @@ export async function fetchPokemonLocations(nameOrId: string | number): Promise<
 /**
  * Fetch Pokemon species data including Pokedex entries
  */
-export async function fetchPokemonSpecies(nameOrId: string | number): Promise<PokemonSpecies> {
+export async function fetchPokemonSpecies(
+	nameOrId: string | number,
+	fetchFn: typeof fetch = fetch
+): Promise<PokemonSpecies> {
 	const cacheKey = `species_${nameOrId}`;
 
 	// Check cache first
@@ -225,19 +318,57 @@ export async function fetchPokemonSpecies(nameOrId: string | number): Promise<Po
 		return cached;
 	}
 
-	// Fetch from API
-	if (import.meta.env.DEV) {
-		console.log(`[Cache MISS] Fetching species data for ${nameOrId} from API`);
-	}
-	const response = await fetchWithRetry(`${BASE_URL}/pokemon-species/${nameOrId}`);
-	if (!response.ok) {
-		// Log detailed error server-side only
-		if (import.meta.env.DEV) {
-			console.error(`Failed to fetch species for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+	let data: PokemonSpecies;
+
+	if (USE_LOCAL_DATA) {
+		// Load from local data
+		const id = typeof nameOrId === 'number' ? nameOrId : nameOrId;
+		try {
+			// Try individual file first
+			try {
+				data = await loadLocalData<PokemonSpecies>(`species-${id}.json`, fetchFn);
+			} catch {
+				// Fallback to combined file
+				const allSpecies = await loadLocalData<PokemonSpecies[]>('all-species.json', fetchFn);
+				const species = allSpecies.find(
+					(s) => s.id === nameOrId || s.name === nameOrId
+				);
+				if (!species) {
+					// Return a fallback for missing species (e.g., Porygon #137)
+					console.warn(`Species data not found for ${nameOrId}, returning fallback`);
+					data = {
+						id: typeof nameOrId === 'number' ? nameOrId : 0,
+						name: typeof nameOrId === 'string' ? nameOrId : 'unknown',
+						flavor_text_entries: [
+							{
+								flavor_text: 'Species data not available.',
+								language: { name: 'en' },
+								version: { name: 'red' }
+							}
+						]
+					};
+				} else {
+					data = species;
+				}
+			}
+		} catch (error) {
+			throw new Error(`Failed to load species data: ${error}`);
 		}
-		throw new Error('Failed to fetch Pokemon species data');
+	} else {
+		// Fetch from API
+		if (import.meta.env.DEV) {
+			console.log(`[Cache MISS] Fetching species data for ${nameOrId} from API`);
+		}
+		const response = await fetchWithRetry(`${BASE_URL}/pokemon-species/${nameOrId}`);
+		if (!response.ok) {
+			// Log detailed error server-side only
+			if (import.meta.env.DEV) {
+				console.error(`Failed to fetch species for Pokemon: ${nameOrId} - ${response.status} ${response.statusText}`);
+			}
+			throw new Error('Failed to fetch Pokemon species data');
+		}
+		data = await response.json();
 	}
-	const data = await response.json();
 
 	// Store in cache
 	setInCache(cacheKey, data);

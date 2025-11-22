@@ -28,10 +28,10 @@ async function fetchInBatches<T>(
 	return results;
 }
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ params, fetch }) => {
 	try {
 		// Fetch first 151 Pokemon (Gen 1)
-		const pokemonList = await fetchPokemonList(151, 0);
+		const pokemonList = await fetchPokemonList(151, 0, fetch);
 
 		// Prepare items with IDs for batched fetching
 		const itemsWithIds = pokemonList.map((item) => ({
@@ -39,12 +39,12 @@ export const load: PageLoad = async ({ params }) => {
 		}));
 
 		// Fetch detailed data in batches to avoid rate limiting
-		const pokemonData = await fetchInBatches<Pokemon>(itemsWithIds, fetchPokemon, 20);
+		const pokemonData = await fetchInBatches<Pokemon>(itemsWithIds, (id) => fetchPokemon(id, fetch), 20);
 
 		// Prefetch all species data to cache it for later use
 		// This prevents hitting the API when navigating between Pokemon
 		// Run in background - don't wait for it to complete
-		fetchInBatches<PokemonSpecies>(itemsWithIds, fetchPokemonSpecies, 20)
+		fetchInBatches<PokemonSpecies>(itemsWithIds, (id) => fetchPokemonSpecies(id, fetch), 20)
 			.then(() => {
 				console.log('[Cache] Successfully cached all 151 Pokemon species data');
 			})

@@ -4,12 +4,15 @@
 	import { playDpadClick, playCenterButtonSound } from '$lib/audio/sounds';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import type { PageData } from './$types';
 	import type { PokemonSpecies } from '$lib/api/pokeapi';
 	import Tutorial from '$lib/components/Tutorial.svelte';
 
 	export let data: PageData;
+
+	// Constants
+	const CRY_DELAY_MS = 300; // Delay after click sound for better UX
 
 	let currentIndex = data.initialIndex;
 	let isPlaying = false;
@@ -21,6 +24,7 @@
 	let currentCry: HTMLAudioElement | null = null; // Track cry audio
 	let cryTimeout: ReturnType<typeof setTimeout> | null = null; // Track delayed cry
 	let shouldPlayCryAfterDelay = false; // Flag to control delayed cry playback
+	let hasUserInteracted = false; // Track if user has interacted (for autoplay policy)
 	let tutorialComponent: any; // Reference to Tutorial component
 	let isUnfolded = false; // Track fold/unfold state
 
@@ -30,6 +34,12 @@
 		setTimeout(() => {
 			isUnfolded = true;
 		}, 100);
+	});
+
+	// Cleanup audio when component unmounts
+	onDestroy(() => {
+		stopCry();
+		stopAudio();
 	});
 
 	// Update currentIndex when data.initialIndex changes (URL navigation)
@@ -55,23 +65,32 @@
 
 	// Play Pokemon cry sound (browser only) with optional delay
 	function playCry(cryUrl: string, delay: number = 0) {
-		if (typeof Audio !== 'undefined') {
+		if (typeof Audio !== 'undefined' && cryUrl) {
 			// Stop previous cry if still playing
 			stopCry();
 
 			const playAudio = () => {
-				const audio = new Audio(cryUrl);
-				audio.volume = 0.5;
-				currentCry = audio;
+				try {
+					const audio = new Audio(cryUrl);
+					audio.volume = 0.5;
+					currentCry = audio;
 
-				audio.onended = () => {
-					currentCry = null;
-				};
+					audio.onended = () => {
+						currentCry = null;
+					};
 
-				audio.play().catch(err => {
-					console.error('Error playing cry:', err);
-					currentCry = null;
-				});
+					audio.onerror = (event: Event | string) => {
+						console.error('Error loading cry audio:', cryUrl, event);
+						currentCry = null;
+					};
+
+					audio.play().catch(err => {
+						console.error('Error playing cry:', err, 'URL:', cryUrl);
+						currentCry = null;
+					});
+				} catch (error) {
+					console.error('Error creating audio element:', error, 'URL:', cryUrl);
+				}
 			};
 
 			if (delay > 0) {
@@ -84,17 +103,20 @@
 
 	// Watch for Pokemon changes and play cry + preload species data
 	$: if (currentPokemon && typeof window !== 'undefined') {
-		// Only play cry with delay if flag is set (from D-pad navigation)
-		if (shouldPlayCryAfterDelay) {
-			playCry(currentPokemon.cries.legacy, 300); // 300ms delay after click sound
-			shouldPlayCryAfterDelay = false;
-		} else {
-			playCry(currentPokemon.cries.legacy); // Immediate for initial load
+		// Only play cry after user interaction (respects browser autoplay policy)
+		if (hasUserInteracted && currentPokemon.cries?.legacy) {
+			if (shouldPlayCryAfterDelay) {
+				playCry(currentPokemon.cries.legacy, CRY_DELAY_MS);
+				shouldPlayCryAfterDelay = false;
+			} else {
+				playCry(currentPokemon.cries.legacy); // Immediate after first interaction
+			}
 		}
 		loadSpeciesData(); // Preload species data in background
 	}
 
 	function nextPokemon() {
+		hasUserInteracted = true; // Mark that user has interacted
 		playDpadClick(); // Play D-pad click sound
 		stopAudio(); // Stop TTS when navigating
 		stopCry(); // Stop cry when navigating
@@ -107,6 +129,7 @@
 	}
 
 	function previousPokemon() {
+		hasUserInteracted = true; // Mark that user has interacted
 		playDpadClick(); // Play D-pad click sound
 		stopAudio(); // Stop TTS when navigating
 		stopCry(); // Stop cry when navigating
@@ -120,6 +143,7 @@
 
 	function toggleShiny() {
 		if (!showEntry) {
+			hasUserInteracted = true; // Mark that user has interacted
 			playDpadClick(); // Play D-pad click sound
 			showShiny = !showShiny;
 		}
@@ -140,6 +164,7 @@
 	}
 
 	async function toggleEntryView() {
+		hasUserInteracted = true; // Mark that user has interacted
 		playCenterButtonSound(); // Play center button sound
 		showEntry = !showEntry;
 
